@@ -1,0 +1,26 @@
+[versions]
+agp = "8.13.2"
+kotlin = "2.3.21"
+compose = "1.10.3"
+compose-android = "1.10.5"
+compose-material3 = "1.9.0"
+activity = "1.12.4"
+junit = "4.13.2"
+robolectric = "4.16.1"
+
+[libraries]
+activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
+compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "compose" }
+compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "compose-material3" }
+compose-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "compose-android" }
+compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose" }
+junit = { module = "junit:junit", version.ref = "junit" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-kmp-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
