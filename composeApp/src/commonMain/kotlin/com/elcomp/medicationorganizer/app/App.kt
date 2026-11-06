@@ -74,6 +74,12 @@ fun App(
     DisposableEffect(services) {
         onDispose(services::close)
     }
+    App(services, launchConfig.invalidConfiguration)
+}
+
+/** The host owns and closes these services. */
+@Composable
+fun App(services: AppServices, invalidConfiguration: Boolean) {
     LaunchedEffect(services) {
         services.session.restore()
         services.session.monitorExpiry()
@@ -93,11 +99,11 @@ fun App(
         }
         is SessionState.SignedOut -> AppTheme {
             AuthFlow(services, current.reason) {
-                AppModeStatus(services.settings, launchConfig.invalidConfiguration)
+                AppModeStatus(services.settings, invalidConfiguration)
             }
         }
         is SessionState.SignedIn -> key(services, current.generation) {
-            SignedInApp(services, launchConfig.invalidConfiguration)
+            SignedInApp(services, invalidConfiguration)
         }
     }
 }

@@ -23,6 +23,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
+import androidx.test.core.app.ActivityScenario
 import com.elcomp.medicationorganizer.core.ui.AppSubmitButton
 import kotlinx.coroutines.CompletableDeferred
 import org.junit.Assert.assertEquals
@@ -85,6 +86,11 @@ class MainActivityTest {
         replaceField("profile-name", "Tymczasowa nazwa")
         composeRule.onNodeWithTag("profile-submit").performScrollTo().performClick()
         assertEventuallyDisplayed(hasText("Nazwa wyświetlana: Tymczasowa nazwa"))
+
+        composeRule.activityRule.scenario.recreate()
+
+        assertEventuallyDisplayed(hasTestTag("screen-settings"))
+        assertEventuallyDisplayed(hasText("Nazwa wyświetlana: Tymczasowa nazwa"))
         signOut()
 
         assertEventuallyDisplayed(hasTestTag("auth-login"))
@@ -122,6 +128,51 @@ class MainActivityTest {
         replaceField("auth-password", "example-password")
         submitAuth()
         assertEventuallyDisplayed(hasTestTag("screen-today"))
+    }
+
+    @Test
+    fun activityRecreationKeepsDemoSessionAndHistoryTab() {
+        startFromWelcome()
+        composeRule.onNodeWithTag("tab-history").performClick()
+        assertEventuallyDisplayed(hasTestTag("screen-history"))
+
+        composeRule.activityRule.scenario.recreate()
+
+        assertEventuallyDisplayed(hasTestTag("screen-history"))
+        composeRule.onNodeWithTag("tab-history").assertIsSelected()
+        composeRule.onNodeWithTag("welcome-screen").assertDoesNotExist()
+    }
+
+    @Test
+    fun activityRecreationKeepsAnUnsavedProfileDraft() {
+        startFromWelcome()
+        openSettings()
+        composeRule.onNodeWithTag("navigation-open-profile").performScrollTo().performClick()
+        waitForNode(hasTestTag("profile-name"))
+        replaceField("profile-name", "Niezapisana nazwa")
+
+        composeRule.activityRule.scenario.recreate()
+
+        assertEventuallyDisplayed(hasTestTag("profile-screen"))
+        waitForNode(hasTestTag("profile-name"))
+        assertFieldValue("profile-name", "Niezapisana nazwa")
+    }
+
+    @Test
+    fun activityRecreationKeepsUnsavedAccessibilityPreferences() {
+        startFromWelcome()
+        openSettings()
+        waitForNode(hasTestTag("preferences-high-contrast"))
+        composeRule.onNodeWithTag("preferences-high-contrast").performScrollTo().performClick()
+        composeRule.onNodeWithTag("preferences-text-175").performScrollTo().performClick()
+
+        composeRule.activityRule.scenario.recreate()
+
+        assertEventuallyDisplayed(hasTestTag("screen-settings"))
+        waitForNode(hasTestTag("preferences-high-contrast"))
+        composeRule.onNodeWithTag("preferences-high-contrast").performScrollTo().assertIsOn()
+        composeRule.onNodeWithTag("preferences-text-175").performScrollTo().assertIsSelected()
+        composeRule.onNodeWithTag("preferences-save").performScrollTo().assertIsEnabled()
     }
 
     @Test
@@ -182,17 +233,20 @@ class MainActivityTest {
         pressSystemBack()
         assertSimplifiedToday()
 
-        composeRule.activityRule.scenario.recreate()
-        startFromWelcome()
-        assertSimplifiedToday()
-        composeRule.onNodeWithTag("tab-history").assertIsDisplayed()
-        openSettings()
-        waitForNode(hasTestTag("preferences-simplified"))
-        composeRule.onNodeWithTag("preferences-simplified").performScrollTo().assertIsOn()
-        composeRule.onNodeWithTag("preferences-high-contrast").performScrollTo().assertIsOn()
-        composeRule.onNode(hasTestTag("preferences-text-200") and hasText("200%"))
-            .performScrollTo()
-            .assertIsSelected()
+        // Finish this host so the next activity starts with fresh in-memory services.
+        composeRule.activityRule.scenario.close()
+        ActivityScenario.launch(MainActivity::class.java).use {
+            startFromWelcome()
+            assertSimplifiedToday()
+            composeRule.onNodeWithTag("tab-history").assertIsDisplayed()
+            openSettings()
+            waitForNode(hasTestTag("preferences-simplified"))
+            composeRule.onNodeWithTag("preferences-simplified").performScrollTo().assertIsOn()
+            composeRule.onNodeWithTag("preferences-high-contrast").performScrollTo().assertIsOn()
+            composeRule.onNode(hasTestTag("preferences-text-200") and hasText("200%"))
+                .performScrollTo()
+                .assertIsSelected()
+        }
     }
 
     @Test

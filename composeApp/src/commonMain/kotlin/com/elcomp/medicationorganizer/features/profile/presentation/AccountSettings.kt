@@ -14,6 +14,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,12 +45,23 @@ internal sealed interface AccountUiState {
     ) : AccountUiState
 }
 
+private val preferencesDraftSaver = listSaver<AccessibilityPreferences, Any>(
+    save = { listOf(it.simplifiedMode, it.textScale, it.highContrast) },
+    restore = {
+        AccessibilityPreferences(
+            simplifiedMode = it[0] as Boolean,
+            textScale = it[1] as Int,
+            highContrast = it[2] as Boolean,
+        )
+    },
+)
+
 @Composable
 internal fun AccessibilitySettings(
     current: AccessibilityPreferences,
     onSave: suspend (AccessibilityPreferences) -> Unit,
 ) {
-    var draft by remember(current) { mutableStateOf(current) }
+    var draft by rememberSaveable(current, stateSaver = preferencesDraftSaver) { mutableStateOf(current) }
     var saving by remember { mutableStateOf(false) }
     var saved by remember { mutableStateOf(false) }
     var failed by remember { mutableStateOf(false) }
