@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="profile_email">Adres e-mail: %1$s</string>
+    <string name="profile_name_rejected">Sprawdź nazwę wyświetlaną.</string>
+    <string name="profile_save_failed">Nie udało się zapisać nazwy. Spróbuj ponownie.</string>
+    <string name="preferences_title">Dostępność</string>
+    <string name="preferences_simplified">Tryb uproszczony</string>
+    <string name="preferences_high_contrast">Wysoki kontrast</string>
+    <string name="preferences_text_scale">Rozmiar tekstu: %1$d%</string>
+    <string name="preferences_percent">%1$d%</string>
+    <string name="preferences_save">Zapisz preferencje</string>
+    <string name="preferences_saved">Zapisano preferencje.</string>
+    <string name="preferences_save_failed">Nie udało się zapisać preferencji. Spróbuj ponownie.</string>
+    <string name="settings_load_failed">Nie udało się wczytać profilu i ustawień.</string>
+    <string name="settings_live_unavailable">Profil i preferencje konta są dostępne w trybie demo.</string>
+    <string name="simplified_next_dose">Najbliższa dawka z planu</string>
+    <string name="simplified_no_dose">Brak oczekujących dawek</string>
+    <string name="simplified_plan_failed">Nie udało się wczytać planu.</string>
+</resources>

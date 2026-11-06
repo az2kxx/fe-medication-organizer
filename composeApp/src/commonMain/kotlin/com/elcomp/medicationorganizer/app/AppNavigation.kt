@@ -33,13 +33,19 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.elcomp.medicationorganizer.core.demo.DemoRepository
 import com.elcomp.medicationorganizer.core.network.ApiSettings
 import com.elcomp.medicationorganizer.core.network.MockScenario
 import com.elcomp.medicationorganizer.core.session.SessionStorageException
 import com.elcomp.medicationorganizer.core.ui.AppActionButton
 import com.elcomp.medicationorganizer.core.ui.AppEmptyState
 import com.elcomp.medicationorganizer.core.ui.AppErrorState
+import com.elcomp.medicationorganizer.core.ui.AppLoadingState
 import com.elcomp.medicationorganizer.core.ui.AppSubmitButton
+import com.elcomp.medicationorganizer.features.profile.data.AccessibilityPreferences
+import com.elcomp.medicationorganizer.features.profile.presentation.AccessibilitySettings
+import com.elcomp.medicationorganizer.features.profile.presentation.AccountUiState
+import com.elcomp.medicationorganizer.features.profile.presentation.ProfileForm
 import com.elcomp.medicationorganizer.resources.*
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -66,11 +72,17 @@ private fun MainTab.destination(): Destination = when (this) {
 internal fun AppNavigation(
     settings: ApiSettings,
     invalidConfiguration: Boolean,
+    account: AccountUiState,
+    demo: DemoRepository?,
+    onRetry: () -> Unit,
+    onSaveDisplayName: suspend (String) -> Unit,
+    onSavePreferences: suspend (AccessibilityPreferences) -> Unit,
     onSignOut: suspend () -> Unit,
 ) {
     var routeName by rememberSaveable { mutableStateOf(Destination.Today.name) }
-    var displayName by rememberSaveable { mutableStateOf("") }
     val route = Destination.entries.firstOrNull { it.name == routeName } ?: Destination.Today
+    val ready = account as? AccountUiState.Ready
+    val preferences = ready?.preferences ?: AccessibilityPreferences.Default
 
     fun navigate(destination: Destination) {
         routeName = destination.name
@@ -116,11 +128,17 @@ internal fun AppNavigation(
                     )
                     AppModeStatus(settings, invalidConfiguration)
                     when (route) {
-                        Destination.Today -> TodayContent(
-                            displayName = displayName,
-                            onOrganizer = { navigate(Destination.Organizer) },
-                            onSettings = { navigate(Destination.Settings) },
-                        )
+                        Destination.Today -> {
+                            val onOrganizer = { navigate(Destination.Organizer) }
+                            if (preferences.simplifiedMode && demo != null) {
+                                SimplifiedToday(demo, onOrganizer)
+                            } else {
+                                TodayContent(ready?.profile?.displayName.orEmpty(), onOrganizer)
+                            }
+                            SecondaryAction(Res.string.navigation_settings, "today-open-settings") {
+                                navigate(Destination.Settings)
+                            }
+                        }
                         Destination.Organizer -> {
                             Text(stringResource(Res.string.organizer_description), style = MaterialTheme.typography.bodyLarge)
                             AppActionButton(
@@ -148,14 +166,22 @@ internal fun AppNavigation(
                             message = stringResource(Res.string.history_empty_message),
                         )
                         Destination.Settings -> SettingsContent(
-                            displayName = displayName,
+                            account = account,
                             onProfile = { navigate(Destination.Profile) },
+                            onRetry = onRetry,
+                            onSavePreferences = onSavePreferences,
                             onSignOut = onSignOut,
                         )
                         Destination.Profile -> {
-                            LocalProfileForm(initialName = displayName) { name ->
-                                displayName = name
-                                navigate(Destination.Settings)
+                            if (ready != null) {
+                                ProfileForm(
+                                    email = ready.profile.email,
+                                    initialName = ready.profile.displayName.orEmpty(),
+                                    onSave = { name ->
+                                        onSaveDisplayName(name)
+                                        navigate(Destination.Settings)
+                                    },
+                                )
                             }
                             SecondaryAction(Res.string.navigation_back_settings, "navigation-back-settings") {
                                 navigate(Destination.Settings)
@@ -165,7 +191,11 @@ internal fun AppNavigation(
                 }
             }
             if (tab != null) {
-                AppBottomNavigation(selected = tab, onSelect = { navigate(it.destination()) })
+                AppBottomNavigation(
+                    selected = tab,
+                    textScale = preferences.textScale,
+                    onSelect = { navigate(it.destination()) },
+                )
             }
         }
     }
@@ -173,16 +203,34 @@ internal fun AppNavigation(
 
 @Composable
 private fun SettingsContent(
-    displayName: String,
+    account: AccountUiState,
     onProfile: () -> Unit,
+    onRetry: () -> Unit,
+    onSavePreferences: suspend (AccessibilityPreferences) -> Unit,
     onSignOut: suspend () -> Unit,
 ) {
     var signOutFailed by remember { mutableStateOf(false) }
-    Text(
-        if (displayName.isBlank()) stringResource(Res.string.profile_name_missing)
-        else stringResource(Res.string.profile_name_summary, displayName),
-    )
-    SecondaryAction(Res.string.navigation_open_profile, "navigation-open-profile", onProfile)
+    when (account) {
+        AccountUiState.Unavailable -> Text(stringResource(Res.string.settings_live_unavailable))
+        AccountUiState.Loading -> AppLoadingState()
+        AccountUiState.Failed -> AppErrorState(
+            message = stringResource(Res.string.settings_load_failed),
+            onRetry = onRetry,
+        )
+        is AccountUiState.Ready -> {
+            Text(
+                stringResource(Res.string.profile_email, account.profile.email),
+                modifier = Modifier.testTag("profile-email"),
+            )
+            val displayName = account.profile.displayName
+            Text(
+                if (displayName.isNullOrBlank()) stringResource(Res.string.profile_name_missing)
+                else stringResource(Res.string.profile_name_summary, displayName),
+            )
+            SecondaryAction(Res.string.navigation_open_profile, "navigation-open-profile", onProfile)
+            AccessibilitySettings(account.preferences, onSavePreferences)
+        }
+    }
     if (signOutFailed) {
         AppErrorState(message = stringResource(Res.string.auth_logout_failed))
     }
@@ -201,7 +249,7 @@ private fun SettingsContent(
 }
 
 @Composable
-private fun TodayContent(displayName: String, onOrganizer: () -> Unit, onSettings: () -> Unit) {
+private fun TodayContent(displayName: String, onOrganizer: () -> Unit) {
     if (displayName.isNotBlank()) {
         Text(stringResource(Res.string.today_greeting, displayName), style = MaterialTheme.typography.titleLarge)
     }
@@ -228,7 +276,6 @@ private fun TodayContent(displayName: String, onOrganizer: () -> Unit, onSetting
             )
         }
     }
-    SecondaryAction(Res.string.navigation_settings, "today-open-settings", onSettings)
 }
 
 @Composable

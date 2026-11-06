@@ -6,11 +6,16 @@ import com.elcomp.medicationorganizer.features.auth.data.dto.RegisterRequest
 import com.elcomp.medicationorganizer.features.auth.data.dto.TokenResponse
 import com.elcomp.medicationorganizer.features.auth.data.dto.UserResponse
 import com.elcomp.medicationorganizer.features.auth.data.dto.UserRole
+import com.elcomp.medicationorganizer.features.profile.data.AccessibilityPreferences
+import com.elcomp.medicationorganizer.features.profile.data.DemoPreferencesStorageException
+import com.elcomp.medicationorganizer.features.profile.data.DemoPreferencesStore
+import com.elcomp.medicationorganizer.features.profile.data.ProfileResponse
+import com.elcomp.medicationorganizer.features.profile.data.UpdateDisplayNameRequest
 import io.ktor.client.engine.mock.MockRequestHandleScope
 import io.ktor.client.engine.mock.respond
+import io.ktor.client.engine.mock.toByteArray
 import io.ktor.client.request.HttpRequestData
 import io.ktor.client.request.HttpResponseData
-import io.ktor.client.engine.mock.toByteArray
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
@@ -22,9 +27,11 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.io.IOException
 import kotlinx.serialization.SerializationException
 
@@ -36,13 +43,24 @@ private val jsonHeaders = headersOf(HttpHeaders.ContentType, ContentType.Applica
 
 internal fun demoAccountLogin() = LoginRequest(demoEmail, demoPassword)
 
-internal class DemoSession(private val scenario: MockScenario, private val clock: Clock) {
-    private class DemoCredential(val token: String, val expiresAt: Instant)
+internal class DemoSession(
+    private val scenario: MockScenario,
+    private val clock: Clock,
+    private val preferencesStore: DemoPreferencesStore? = null,
+) {
+    private class DemoCredential(val token: String, val expiresAt: Instant, val email: String)
+
+    private class DemoAccount(
+        val password: String,
+        var profile: ProfileResponse,
+        var preferences: AccessibilityPreferences = AccessibilityPreferences.Default,
+    )
 
     private val lock = Mutex()
     private val routes = DemoRoutes(empty = scenario == MockScenario.EMPTY)
-    private val accounts = mutableMapOf(demoEmail to demoPassword)
+    private val accounts = mutableMapOf(demoEmail to seedAccount())
     private var active: DemoCredential? = null
+    private var seedPreferencesLoaded = false
 
     suspend fun MockRequestHandleScope.handle(request: HttpRequestData): HttpResponseData {
         when (scenario) {
@@ -59,16 +77,24 @@ internal class DemoSession(private val scenario: MockScenario, private val clock
                     register(request)
                 request.method == HttpMethod.Get && request.url.encodedPath.startsWith("/api/organizer-models/") ->
                     with(routes) { handle(request) }
-                !hasActiveToken(request) -> respond("", HttpStatusCode.Unauthorized)
-                else -> with(routes) { handle(request) }
+                else -> {
+                    val account = activeAccount(request) ?: return@withLock respond("", HttpStatusCode.Unauthorized)
+                    try {
+                        accountRequest(request, account)
+                    } catch (_: DemoPreferencesStorageException) {
+                        respond("", HttpStatusCode.ServiceUnavailable)
+                    }
+                }
             }
         }
     }
 
     suspend fun reset() = lock.withLock {
+        preferencesStore?.clear()
         accounts.clear()
-        accounts[demoEmail] = demoPassword
+        accounts[demoEmail] = seedAccount()
         active = null
+        seedPreferencesLoaded = false
         routes.reset()
     }
 
@@ -79,10 +105,70 @@ internal class DemoSession(private val scenario: MockScenario, private val clock
         }
     }
 
-    private fun hasActiveToken(request: HttpRequestData): Boolean {
-        val credential = active ?: return false
-        return credential.expiresAt > clock.now() &&
-            request.headers[HttpHeaders.Authorization] == "Bearer ${credential.token}"
+    private fun activeAccount(request: HttpRequestData): DemoAccount? {
+        val credential = active ?: return null
+        if (credential.expiresAt <= clock.now() ||
+            request.headers[HttpHeaders.Authorization] != "Bearer ${credential.token}"
+        ) {
+            return null
+        }
+        return accounts[credential.email]
+    }
+
+    private suspend fun MockRequestHandleScope.accountRequest(
+        request: HttpRequestData,
+        account: DemoAccount,
+    ): HttpResponseData = when ("${request.method.value} ${request.url.encodedPath}") {
+        "GET /api/users/me" -> respondJson(account.profile)
+        "PATCH /api/users/me" -> updateDisplayName(request, account)
+        "GET /api/users/me/preferences" -> respondJson(readPreferences(account))
+        "PUT /api/users/me/preferences" -> savePreferences(request, account)
+        else -> with(routes) { handle(request) }
+    }
+
+    private suspend fun MockRequestHandleScope.updateDisplayName(
+        request: HttpRequestData,
+        account: DemoAccount,
+    ): HttpResponseData {
+        val name = request.decode<UpdateDisplayNameRequest>()?.displayName?.trim()
+        if (name == null || name.length !in 1..32) return respond("", HttpStatusCode.BadRequest)
+        account.profile = account.profile.copy(displayName = name)
+        return respondJson(account.profile)
+    }
+
+    private suspend fun readPreferences(account: DemoAccount): AccessibilityPreferences {
+        if (account.profile.email == demoEmail && !seedPreferencesLoaded) {
+            val record = preferencesStore?.read()
+            val saved = try {
+                record?.let { apiJson.decodeFromString<AccessibilityPreferences>(it) }
+            } catch (_: SerializationException) {
+                null
+            }
+            account.preferences = saved?.takeIf { it.textScale in AccessibilityPreferences.SupportedTextScales }
+                ?: AccessibilityPreferences.Default
+            seedPreferencesLoaded = true
+        }
+        return account.preferences
+    }
+
+    private suspend fun MockRequestHandleScope.savePreferences(
+        request: HttpRequestData,
+        account: DemoAccount,
+    ): HttpResponseData {
+        val value = request.decode<AccessibilityPreferences>()
+        if (value == null || value.textScale !in AccessibilityPreferences.SupportedTextScales) {
+            return respond("", HttpStatusCode.BadRequest)
+        }
+        if (account.profile.email == demoEmail) {
+            withContext(NonCancellable) {
+                preferencesStore?.write(apiJson.encodeToString(value))
+                account.preferences = value
+                seedPreferencesLoaded = true
+            }
+        } else {
+            account.preferences = value
+        }
+        return respondJson(account.preferences)
     }
 
     @OptIn(ExperimentalUuidApi::class)
@@ -92,17 +178,13 @@ internal class DemoSession(private val scenario: MockScenario, private val clock
         if (!validEmail(email) || !validPassword(credentials.password)) {
             return respond("", HttpStatusCode.BadRequest)
         }
-        if (accounts[email] != credentials.password) {
+        if (accounts[email]?.password != credentials.password) {
             return respond("", HttpStatusCode.Unauthorized)
         }
         if (active != null) routes.reset()
         val token = "demo-token-${Uuid.random()}"
-        active = DemoCredential(token, clock.now() + demoTokenTtlSeconds.seconds)
-        return respond(
-            apiJson.encodeToString(TokenResponse(token, demoTokenTtlSeconds)),
-            HttpStatusCode.OK,
-            jsonHeaders,
-        )
+        active = DemoCredential(token, clock.now() + demoTokenTtlSeconds.seconds, email)
+        return respondJson(TokenResponse(token, demoTokenTtlSeconds))
     }
 
     private suspend fun MockRequestHandleScope.register(request: HttpRequestData): HttpResponseData {
@@ -126,9 +208,14 @@ internal class DemoSession(private val scenario: MockScenario, private val clock
             updatedAt = demoTimestamp,
             roles = setOf(UserRole.USER),
         )
-        accounts[email] = registration.password
-        return respond(apiJson.encodeToString(user), HttpStatusCode.OK, jsonHeaders)
+        accounts[email] = DemoAccount(registration.password, ProfileResponse(user.id, user.email, user.displayName))
+        return respondJson(user)
     }
+
+    private fun seedAccount() = DemoAccount(demoPassword, ProfileResponse(1, demoEmail, "Alex"))
+
+    private inline fun <reified T> MockRequestHandleScope.respondJson(value: T): HttpResponseData =
+        respond(apiJson.encodeToString(value), HttpStatusCode.OK, jsonHeaders)
 
     private suspend inline fun <reified T> HttpRequestData.decode(): T? = try {
         apiJson.decodeFromString(body.toByteArray().decodeToString())

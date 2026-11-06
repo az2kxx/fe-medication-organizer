@@ -10,6 +10,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasSetTextAction
@@ -58,7 +59,7 @@ class MainActivityTest {
     }
 
     @Test
-    fun demoRegistrationRequiresLoginAndAccountSurvivesLogout() {
+    fun demoRegistrationRequiresLoginAndProfileStaysWithItsAccount() {
         val email = "ola@example.org"
         val password = "test-password"
         openAuthRegistration()
@@ -77,12 +78,14 @@ class MainActivityTest {
         submitAuth()
         assertEventuallyDisplayed(hasTestTag("screen-today"))
 
-        composeRule.onNodeWithTag("today-open-settings").performScrollTo().performClick()
+        openSettings()
         composeRule.onNodeWithTag("navigation-open-profile").performScrollTo().performClick()
+        waitForNode(hasTestTag("profile-name"))
+        assertEventuallyDisplayed(hasTestTag("profile-email") and hasText(email, substring = true))
         replaceField("profile-name", "Tymczasowa nazwa")
         composeRule.onNodeWithTag("profile-submit").performScrollTo().performClick()
-        composeRule.onNodeWithText("Nazwa wyświetlana: Tymczasowa nazwa").assertIsDisplayed()
-        composeRule.onNodeWithTag("settings-sign-out").performScrollTo().performClick()
+        assertEventuallyDisplayed(hasText("Nazwa wyświetlana: Tymczasowa nazwa"))
+        signOut()
 
         assertEventuallyDisplayed(hasTestTag("auth-login"))
         composeRule.onNodeWithTag("tab-today").assertDoesNotExist()
@@ -92,8 +95,16 @@ class MainActivityTest {
         replaceField("auth-password", password)
         submitAuth()
         assertEventuallyDisplayed(hasTestTag("screen-today"))
-        composeRule.onNodeWithTag("today-open-settings").performScrollTo().performClick()
-        composeRule.onNodeWithTag("screen-settings").assertIsDisplayed()
+        openSettings()
+        assertEventuallyDisplayed(hasText("Nazwa wyświetlana: Tymczasowa nazwa"))
+
+        signOut()
+        replaceField("auth-email", "alex@example.com")
+        replaceField("auth-password", "example-password")
+        submitAuth()
+        assertEventuallyDisplayed(hasTestTag("screen-today"))
+        openSettings()
+        assertEventuallyDisplayed(hasTestTag("profile-email") and hasText("alex@example.com", substring = true))
         composeRule.onNodeWithText("Nazwa wyświetlana: Tymczasowa nazwa").assertDoesNotExist()
     }
 
@@ -129,11 +140,14 @@ class MainActivityTest {
     }
 
     @Test
-    fun localProfileAnnouncesBlankNameErrorAndSavesValidName() {
+    fun profileDisplaysAccountEmailAnnouncesBlankNameErrorAndSavesValidName() {
         startFromWelcome()
-        composeRule.onNodeWithTag("today-open-settings").performScrollTo().performClick()
-        composeRule.onNodeWithTag("screen-settings").assertIsDisplayed()
+        openSettings()
+        assertEventuallyDisplayed(hasTestTag("profile-email") and hasText("alex@example.com", substring = true))
         composeRule.onNodeWithTag("navigation-open-profile").performScrollTo().performClick()
+        waitForNode(hasTestTag("profile-name"))
+        assertEventuallyDisplayed(hasTestTag("profile-email") and hasText("alex@example.com", substring = true))
+        composeRule.onNodeWithTag("profile-email").assert(!hasSetTextAction())
 
         val name = composeRule.onNodeWithTag("profile-name")
         val submit = composeRule.onNodeWithTag("profile-submit")
@@ -147,10 +161,38 @@ class MainActivityTest {
 
         name.performTextReplacement("  Ola  ")
         submit.performScrollTo().performClick()
-        composeRule.onNodeWithTag("screen-settings").assertIsDisplayed()
-        composeRule.onNodeWithText("Nazwa wyświetlana: Ola").assertIsDisplayed()
+        assertEventuallyDisplayed(hasTestTag("screen-settings"))
+        assertEventuallyDisplayed(hasText("Nazwa wyświetlana: Ola"))
         pressSystemBack()
         composeRule.onNodeWithTag("screen-today").assertIsDisplayed()
+    }
+
+    @Test
+    @Config(qualifiers = "pl-rPL-w320dp-h470dp", fontScale = 2f)
+    fun demoPreferencesSaveAndRestoreWithLargeSystemText() {
+        startFromWelcome()
+        openSettings()
+        for (tag in listOf("preferences-simplified", "preferences-high-contrast", "preferences-text-200")) {
+            waitForNode(hasTestTag(tag))
+            composeRule.onNodeWithTag(tag).performScrollTo().performClick()
+        }
+        composeRule.onNodeWithTag("preferences-save").performScrollTo().performClick()
+        waitForNode(hasTestTag("preferences-saved"))
+        composeRule.onNodeWithTag("preferences-saved").performScrollTo().assertIsDisplayed()
+        pressSystemBack()
+        assertSimplifiedToday()
+
+        composeRule.activityRule.scenario.recreate()
+        startFromWelcome()
+        assertSimplifiedToday()
+        composeRule.onNodeWithTag("tab-history").assertIsDisplayed()
+        openSettings()
+        waitForNode(hasTestTag("preferences-simplified"))
+        composeRule.onNodeWithTag("preferences-simplified").performScrollTo().assertIsOn()
+        composeRule.onNodeWithTag("preferences-high-contrast").performScrollTo().assertIsOn()
+        composeRule.onNode(hasTestTag("preferences-text-200") and hasText("200%"))
+            .performScrollTo()
+            .assertIsSelected()
     }
 
     @Test
@@ -247,11 +289,32 @@ class MainActivityTest {
         composeRule.onNodeWithTag("auth-submit").performScrollTo().performClick()
     }
 
-    private fun assertEventuallyDisplayed(matcher: SemanticsMatcher) {
+    private fun waitForNode(matcher: SemanticsMatcher) {
         composeRule.waitUntil(timeoutMillis = 5_000) {
             composeRule.onAllNodes(matcher).fetchSemanticsNodes(atLeastOneRootRequired = false).isNotEmpty()
         }
+    }
+
+    private fun assertEventuallyDisplayed(matcher: SemanticsMatcher) {
+        waitForNode(matcher)
         composeRule.onNode(matcher).assertIsDisplayed()
+    }
+
+    private fun openSettings() {
+        composeRule.onNodeWithTag("today-open-settings").performScrollTo().performClick()
+        assertEventuallyDisplayed(hasTestTag("screen-settings"))
+    }
+
+    private fun signOut() {
+        composeRule.onNodeWithTag("settings-sign-out").performScrollTo().performClick()
+        assertEventuallyDisplayed(hasTestTag("auth-login"))
+    }
+
+    private fun assertSimplifiedToday() {
+        waitForNode(hasTestTag("simplified-dose"))
+        composeRule.onNodeWithTag("simplified-dose").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("08:00", substring = true).performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("today-open-organizer").performScrollTo().assertIsDisplayed()
     }
 
     private fun openPreparation() {

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="profile_email">Email address: %1$s</string>
+    <string name="profile_name_rejected">Check the display name.</string>
+    <string name="profile_save_failed">Could not save the display name. Try again.</string>
+    <string name="preferences_title">Accessibility</string>
+    <string name="preferences_simplified">Simplified mode</string>
+    <string name="preferences_high_contrast">High contrast</string>
+    <string name="preferences_text_scale">Text size: %1$d%</string>
+    <string name="preferences_percent">%1$d%</string>
+    <string name="preferences_save">Save preferences</string>
+    <string name="preferences_saved">Preferences saved.</string>
+    <string name="preferences_save_failed">Could not save preferences. Try again.</string>
+    <string name="settings_load_failed">Could not load your profile and preferences.</string>
+    <string name="settings_live_unavailable">Account profile and preferences are available in demo mode.</string>
+    <string name="simplified_next_dose">Next scheduled dose</string>
+    <string name="simplified_no_dose">No pending doses</string>
+    <string name="simplified_plan_failed">Could not load your plan.</string>
+</resources>
