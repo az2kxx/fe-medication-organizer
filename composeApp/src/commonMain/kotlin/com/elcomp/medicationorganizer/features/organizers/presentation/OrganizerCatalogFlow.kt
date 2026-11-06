@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
@@ -113,7 +115,11 @@ private fun CatalogStep(
         }
     }
 
-    Text(stringResource(Res.string.organizer_catalog_intro), style = MaterialTheme.typography.bodyLarge)
+    Text(
+        stringResource(Res.string.organizer_catalog_intro),
+        modifier = Modifier.revealOnEnter().testTag("organizer-catalog-intro"),
+        style = MaterialTheme.typography.bodyLarge,
+    )
     AppTextField(
         value = code,
         onValueChange = {
@@ -227,7 +233,7 @@ private fun DetailsContent(model: OrganizerModelDetails, onSelect: () -> Unit) {
         modifier = Modifier.fillMaxWidth().testTag("organizer-details"),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        ModelHeader(model)
+        ModelHeader(model, revealName = true)
         model.description?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
         if (!model.active) InactiveNote()
         Text(
@@ -254,7 +260,7 @@ private fun ConfirmContent(model: OrganizerModelDetails, onAssign: (suspend (Org
     ) {
         Text(
             stringResource(Res.string.organizer_confirm_title),
-            modifier = Modifier.semantics { heading() },
+            modifier = Modifier.revealOnEnter().semantics { heading() }.testTag("organizer-confirm-title"),
             style = MaterialTheme.typography.titleLarge,
         )
         Text(stringResource(Res.string.organizer_confirm_message), style = MaterialTheme.typography.bodyLarge)
@@ -292,10 +298,13 @@ private fun ConfirmContent(model: OrganizerModelDetails, onAssign: (suspend (Org
 }
 
 @Composable
-private fun ModelHeader(model: OrganizerModelDetails) {
+private fun ModelHeader(model: OrganizerModelDetails, revealName: Boolean = false) {
     Text(
         model.name,
-        modifier = Modifier.semantics { heading() }.testTag("organizer-model-name"),
+        modifier = Modifier
+            .then(if (revealName) Modifier.revealOnEnter() else Modifier)
+            .semantics { heading() }
+            .testTag("organizer-model-name"),
         style = MaterialTheme.typography.titleLarge,
     )
     Text(stringResource(Res.string.organizer_product_code, model.productCode))
@@ -364,6 +373,17 @@ private fun CompartmentCell(compartment: CompartmentDefinitionResponse, rowDay: 
             }
         }
     }
+}
+
+/**
+ * The parent screen owns one scroll state for every step, so a new step would open at the previous step's offset.
+ * Scrolls the step's heading into view when the step is first shown.
+ */
+@Composable
+private fun Modifier.revealOnEnter(): Modifier {
+    val requester = remember { BringIntoViewRequester() }
+    LaunchedEffect(requester) { requester.bringIntoView() }
+    return bringIntoViewRequester(requester)
 }
 
 @Composable

@@ -284,6 +284,28 @@ class MainActivityTest {
     }
 
     @Test
+    @Config(qualifiers = "pl-rPL-w320dp-h470dp", fontScale = 2f)
+    fun organizerCatalogStepsOpenWithTheirHeadingVisibleWithLargeText() {
+        startFromWelcome()
+        composeRule.onNodeWithTag("tab-organizer").performClick()
+        composeRule.onNodeWithTag("organizer-open-catalog").performScrollTo().performClick()
+        waitForNode(hasTestTag("organizer-model-4"))
+        composeRule.onNodeWithTag("organizer-model-2").performScrollTo().performClick()
+
+        waitForNode(hasTestTag("organizer-details"))
+        composeRule.onNodeWithTag("organizer-model-name").assertIsDisplayed()
+        composeRule.onNodeWithTag("organizer-select").performScrollTo().performClick()
+
+        composeRule.onNodeWithTag("organizer-confirm-title").assertIsDisplayed()
+
+        pressSystemBack()
+        composeRule.onNodeWithTag("organizer-model-name").assertIsDisplayed()
+        composeRule.onNodeWithTag("organizer-back-catalog").performScrollTo().performClick()
+        waitForNode(hasTestTag("organizer-catalog-intro"))
+        composeRule.onNodeWithTag("organizer-catalog-intro").assertIsDisplayed()
+    }
+
+    @Test
     @Config(qualifiers = "en-rUS-w360dp-h640dp")
     fun organizerCatalogUsesEnglishDayAndTimeNames() {
         startFromWelcome()
