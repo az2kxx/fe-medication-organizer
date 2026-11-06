@@ -3,7 +3,7 @@ name: Mobile CI
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, codex/mvp-frontend]
 
 permissions:
   contents: read
