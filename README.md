@@ -16,7 +16,7 @@ Otwórz katalog repozytorium w Android Studio, ustaw JDK 21 jako Gradle JDK i ws
 ./gradlew :androidApp:assembleDebug :androidApp:testDebugUnitTest :composeApp:testAndroidHostTest
 ```
 
-APK pojawi się w `androidApp/build/outputs/apk/debug/`. Test startowy sprawdza wspólny ekran Compose. Testy `composeApp` odczytują przykładowe żądania i odpowiedzi logowania oraz rejestracji.
+APK pojawi się w `androidApp/build/outputs/apk/debug/`. Test startowy sprawdza wspólny ekran Compose. Testy hosta w `composeApp` sprawdzają serializację auth, transport oraz przebieg demo.
 
 ## iOS
 
@@ -29,14 +29,59 @@ xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
   -derivedDataPath build/xcode CODE_SIGNING_ALLOWED=NO build
 ```
 
-Jeśli uruchamiasz aplikację na urządzeniu, wybierz swój zespół w ustawieniach podpisywania Xcode.
+Polecenie sprawdza kompilację aplikacji i frameworka dla symulatora. Aby sprawdzić start na iOS, uruchom schemat `iosApp` w Xcode i zobacz aktywny tryb na wspólnym ekranie. Testy transportu i demo uruchomisz poleceniem `:composeApp:testAndroidHostTest` z sekcji Android. Jeśli uruchamiasz aplikację na urządzeniu, wybierz swój zespół w ustawieniach podpisywania Xcode.
 
 ## Tryby pracy
 
-Ekran FE-01 uruchamia się lokalnie bez dodatkowej konfiguracji i bez usług backendowych. FE-02 przygotuje DTO i przykładowe payloady. FE-03 doda wybór transportu `MOCK` lub `LIVE` oraz adres API. Zasady obu trybów opisuje kontrakt. [Kontrakt API](docs/api-contract.md)
+Aplikacja domyślnie uruchamia się w `MOCK` ze scenariuszem `NORMAL`. Ekran startowy pokazuje aktywny tryb oraz nazwę scenariusza, jeśli wybrano inny niż domyślny. W `LIVE` repozytorium auth obsługuje rejestrację i logowanie w wybranym środowisku backendu. Leki, plan, przygotowanie i historia są dostępne w roboczym repozytorium `MOCK`. [Kontrakt API](docs/api-contract.md)
+
+Parametry startowe poniżej działają w konfiguracji `Debug`. W `LIVE` podaj sam origin, np. `https://api.example.com`. Repozytorium dodaje ścieżkę `/api`. Z lokalnym backendem połączysz się przez HTTP pod adresami z przykładów. Dla zdalnego backendu użyj HTTPS.
+
+### Konfiguracja Androida
+
+Uruchom emulator i zainstaluj build debug. Każde polecenie `adb` uruchamia aplikację z własnym zestawem parametrów.
+
+```sh
+./gradlew :androidApp:installDebug
+
+adb shell am start -S -n com.elcomp.medicationorganizer/.MainActivity \
+  --es api_mode MOCK --es mock_scenario API_ERROR
+
+adb shell am start -S -n com.elcomp.medicationorganizer/.MainActivity \
+  --es api_mode LIVE --es api_base_url http://10.0.2.2:8080
+```
+
+`10.0.2.2` to adres hosta widziany przez emulator Androida. Przykład `LIVE` zakłada lokalny backend na porcie 8080.
+
+### Konfiguracja iOS
+
+W Xcode otwórz `Edit Scheme → Run → Arguments → Environment Variables` dla schematu `iosApp`. Ustaw zmienne dla jednego trybu i uruchom aplikację na symulatorze.
+
+| Tryb | Aktywne zmienne |
+| --- | --- |
+| `MOCK` z błędem API | `ELCOMP_API_MODE=MOCK` i `ELCOMP_MOCK_SCENARIO=API_ERROR` |
+| `LIVE` z lokalnym backendem | `ELCOMP_API_MODE=LIVE` i `ELCOMP_API_BASE_URL=http://127.0.0.1:8080` |
+
+Przy zmianie trybu odznacz `ELCOMP_API_BASE_URL` dla `MOCK` lub `ELCOMP_MOCK_SCENARIO` dla `LIVE`. W razie błędnej konfiguracji aplikacja pokazuje komunikat i uruchamia lokalny `MOCK`.
+
+### Przebieg demo
+
+Testy oraz kod funkcji mogą tworzyć `AppServices.create(ApiSettings.Mock())` lub podać scenariusz w `ApiSettings.Mock(scenario)`. `services.auth` obsługuje fikcyjne konto `alex@example.com` z hasłem `example-password`. Rejestracja demo przyjmuje adresy z domen `example.com`, `example.org` i `example.net`. W `LIVE` użyj konta z danego środowiska backendu.
+
+| Scenariusz | Zachowanie transportu demo |
+| --- | --- |
+| `NORMAL` | Początkowe dane demonstracyjne i działające mutacje. |
+| `EMPTY` | Puste listy leków, dawek i historii. Kasetka pozostaje dostępna do dodania planu. |
+| `SLOW` | Każda odpowiedź jest opóźniona o 750 ms. |
+| `OFFLINE` | Każde żądanie daje bezpieczny błąd sieci `NETWORK`. |
+| `API_ERROR` | Każde żądanie zwraca HTTP `503`, które klient mapuje na `SERVER`. |
+
+W `NORMAL` odczytaj plan przez `services.demo` dla `DEMO_DATE` (`2026-11-02`) i `DEMO_ORGANIZER_ID` (`1`). Dodaj lek, przypisz mu dawkę o 20:00 i odczytaj plan ponownie. Przygotuj przegródki zgodnie z planem, oznacz przyjęcie jednej dawki i pominięcie drugiej. Kolejny odczyt historii pokaże obie deklaracje.
+
+Demo zachowuje zmiany w pamięci danej instancji `AppServices`. `resetDemo()` przywraca początkowe konta i dane dla wybranego scenariusza. Ponowne uruchomienie aplikacji tworzy świeżą instancję, a stała data demo pozwala odtworzyć ten sam plan. Instancję utworzoną bezpośrednio w teście zwolnij po sprawdzeniu przez `close()`.
 
 ## Praca nad zadaniami
 
-Utwórz osobną gałąź z aktualnego `main` dla każdego issue. W PR opisz efekt, wykonane sprawdzenia i zależności. GitHub Actions buduje Android APK, uruchamia test startowy i kompiluje aplikację na symulator iOS.
+Utwórz osobną gałąź z aktualnego `main` dla każdego issue. W PR opisz efekt, wykonane sprawdzenia i zależności. GitHub Actions buduje Android APK, uruchamia test startowy i testy hosta oraz kompiluje aplikację na symulator iOS.
 
 FE-04 zaczyna od wspólnego `App()` w `composeApp/src/commonMain`. Tam powstanie nawigacja i tam będą podłączane współdzielone komponenty. [Architektura frontendu](docs/architecture.md) · [Zasady pracy dla zespołu, Codexa i Claude’a](docs/working-agreement.md) · [FE-04](https://github.com/az2kxx/fe-medication-organizer/issues/4)

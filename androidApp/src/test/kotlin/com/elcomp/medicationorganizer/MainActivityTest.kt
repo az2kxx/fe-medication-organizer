@@ -21,5 +21,6 @@ class MainActivityTest {
     fun launcherShowsSharedStartScreen() {
         composeRule.onNodeWithText("EL COMP").assertIsDisplayed()
         composeRule.onNodeWithText("Cyfrowa kasetka").assertIsDisplayed()
+        composeRule.onNodeWithText("Tryb demo (MOCK)").assertIsDisplayed()
     }
 }

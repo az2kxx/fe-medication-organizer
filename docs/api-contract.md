@@ -2,14 +2,14 @@
 
 Żądania i odpowiedzi sukcesu dla rejestracji i logowania odpowiadają kodowi backendu z commita `47f51ad367d9847508a0b079a03aa52bd8fc813a`. Trasy i przykłady w sekcjach roboczych pochodzą z projektu i służą do pracy nad mockami. [Commit backendu](https://github.com/Matt1479/medication-organizer/commit/47f51ad367d9847508a0b079a03aa52bd8fc813a) · [Projekt kontraktu](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/docs/design.md#4-api-contract) · [FE-02](https://github.com/az2kxx/fe-medication-organizer/issues/2)
 
-## Uruchomienie lokalne i tryby pracy
+## Tryby pracy
 
-FE-01 uruchamia lokalny szkielet aplikacji. FE-02 dodaje DTO i fixture dla auth. FE-03 doda klienta HTTP, wspólny interfejs repozytoriów oraz konfigurację przełączania trybu. [Uruchomienie projektu](../README.md) · [FE-03](https://github.com/az2kxx/fe-medication-organizer/issues/3)
+Oba tryby używają tych samych DTO rejestracji i logowania. Tryb, scenariusz demo i adres API ustawia się przy uruchomieniu aplikacji. [Uruchomienie projektu](../README.md#tryby-pracy)
 
 | Tryb docelowy | Skąd pochodzą dane |
 | --- | --- |
-| `MOCK` | Lokalny adapter korzysta z fikcyjnych danych. Wdrożone operacje odtwarza według potwierdzonego kontraktu. Dla projektowanych tras używa roboczych kształtów odpowiedzi i błędów. Zapis leku, harmonogramu, przygotowania lub przyjęcia dawki aktualizuje wspólny stan demonstracyjny. |
-| `LIVE` | Repozytoria wysyłają żądania HTTP do skonfigurowanego adresu backendu po wdrożeniu i uzgodnieniu danej trasy. Błąd połączenia jest widoczny w aplikacji. |
+| `MOCK` | Lokalny transport obsługuje rejestrację i logowanie z fikcyjnymi danymi. Robocze repozytorium demo aktualizuje plan po zmianie leku lub harmonogramu, a następnie udostępnia stan przygotowania i historię przyjęcia dawek. |
+| `LIVE` | Repozytorium wysyła rejestrację i logowanie do skonfigurowanego backendu. Dla kolejnych tras najpierw potwierdzamy kontrakt w kodzie i zachowanie odpowiedzi. |
 
 ## Potwierdzony kontrakt rejestracji i logowania
 
@@ -77,9 +77,13 @@ Fixture testowe korzystają z fikcyjnych danych. Ścieżki prowadzą do JSON uż
 
 Przy próbie rejestracji zajętego adresu e-mail serwis zgłasza `409 Conflict`. Kształt JSON błędów, odpowiedzi na błędne logowanie i szczegóły walidacji wymagają weryfikacji. Przykładowe `400`, `401`, `403`, `404`, `409` i `500` w mockach są scenariuszami roboczymi. [Sprawdzenie adresu e-mail](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/users/UserService.java#L26-L33)
 
+Warstwa transportu zgłasza `ApiException` z kategorią `error`, lokalnym komunikatem oraz `statusCode`, jeśli serwer odpowiedział. `error.retryable` wskazuje, że przyczyna błędu może ustąpić. Transport wysyła każde żądanie jednokrotnie. Kod funkcji decyduje o ewentualnym ponowieniu.
+
 ## Robocze trasy do mocków
 
 Projekt zakłada publiczny odczyt katalogu oraz uwierzytelnienie i kontrolę dostępu do pozostałych zasobów. Obecny backend udostępnia m.in. `GET /api/users/{id}` i `PATCH /api/users/change-display-name`. Odczyt przez ID jest dostępny dla uwierzytelnionych użytkowników niezależnie od właściciela profilu. Zmiana nazwy wymaga bieżącego hasła. Docelowe trasy profilu i preferencji poniżej pozostają do uzgodnienia przed integracją `LIVE`. [Kontroler użytkowników](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/users/UserController.java#L51-L81) · [Odczyt przez ID](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/users/UserService.java#L44-L50)
+
+`services.demo` udostępnia odczyt modelu kasetki po ID, listę i dodawanie leków, zastąpienie harmonogramu, plan dnia i tygodnia, przygotowanie kasetki oraz zapis i odczyt deklaracji przyjęcia. Tabela obejmuje także trasy planowane dla kolejnych zadań. [Repozytorium demo](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/core/demo/DemoRepository.kt)
 
 | Metoda | Trasa | Zastosowanie |
 | --- | --- | --- |
@@ -107,6 +111,8 @@ Projekt zakłada publiczny odczyt katalogu oraz uwierzytelnienie i kontrolę dos
 `organizerId` w planie i `{id}` w trasach `/api/users/me/organizers/{id}/…` oznaczają identyfikator przypisania `UserOrganizer`. `compartmentId` w trasie aktualizacji oznacza `CompartmentDefinition.id`. Układ cyfrowej kasetki wynika z definicji przegródek i ich `positionIndex`.
 
 Projekt zakłada JSON. Daty i godziny harmonogramu to wartości lokalne, np. `2026-10-30` i `08:00`. Czas zdarzenia to znacznik ISO 8601, np. `2026-10-30T08:05:00Z`. Ilość dawki i moc leku to liczby dziesiętne. DTO musi zachować ich precyzję. Projektowane preferencje to `simplifiedMode`, `textScale` i `highContrast`. Strefę czasową i ustawienia powiadomień obsługuje klient. Powiadomienia i ich odkładanie działają lokalnie w MVP.
+
+W demo `days` używa numeracji 1–7 od poniedziałku, a `times` zawiera obiekty z polami `time` i opcjonalnym `timeOfDay`. Ilość i moc przechodzą przez liczbowe `JsonPrimitive`, dzięki czemu zachowują precyzję zapisu dziesiętnego.
 
 Projekt przewiduje `201` dla tworzenia, `200` dla odczytu i aktualizacji oraz `204` dla odpowiedzi bez treści. Konkretne statusy i payloady potwierdzimy dla każdej wdrożonej trasy.
 
