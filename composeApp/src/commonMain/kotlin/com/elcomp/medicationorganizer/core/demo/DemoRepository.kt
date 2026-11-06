@@ -3,6 +3,8 @@ package com.elcomp.medicationorganizer.core.demo
 import com.elcomp.medicationorganizer.core.network.ApiClient
 import io.ktor.http.encodeURLQueryComponent
 import kotlin.time.Instant
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonPrimitive
 
@@ -19,6 +21,12 @@ class DemoRepository internal constructor(private val api: ApiClient) {
 
     suspend fun createMedication(request: CreateMedication): Medication =
         api.post("/api/medications", request, requiresSession = true)
+
+    suspend fun updateMedication(medicationId: Long, request: UpdateMedication): Medication =
+        api.patch("/api/medications/$medicationId", request, requiresSession = true)
+
+    suspend fun updateMedicationStatus(medicationId: Long, request: UpdateMedicationStatus): Medication =
+        api.patch("/api/medications/$medicationId/status", request, requiresSession = true)
 
     suspend fun replaceSchedule(medicationId: Long, request: ReplaceSchedule): MedicationSchedule =
         api.put("/api/medications/$medicationId/schedule", request, requiresSession = true)
@@ -76,18 +84,42 @@ data class CompartmentDefinition(
 )
 
 @Serializable
+@OptIn(ExperimentalSerializationApi::class)
 data class CreateMedication(
     val name: String,
     val doseAmount: JsonPrimitive,
     val doseUnit: String,
-    val startDate: String = DEMO_DATE,
+    @EncodeDefault val startDate: String = DEMO_DATE,
     val endDate: String? = null,
     val strengthValue: JsonPrimitive? = null,
     val strengthUnit: String? = null,
+    val form: MedicationForm? = null,
+)
+
+/** Provisional full set of editable fields sent to the medication PATCH route in MOCK. */
+@Serializable
+data class UpdateMedication(
+    val name: String,
+    val doseAmount: JsonPrimitive,
+    val doseUnit: String,
+    val startDate: String,
+    val endDate: String? = null,
+    val strengthValue: JsonPrimitive? = null,
+    val strengthUnit: String? = null,
+    val form: MedicationForm? = null,
 )
 
 @Serializable
-data class Medication(val id: Long, val name: String, val status: String)
+data class UpdateMedicationStatus(val status: MedicationStatus)
+
+@Serializable
+data class Medication(val id: Long, val name: String, val status: MedicationStatus)
+
+@Serializable
+enum class MedicationForm { TABLET, CAPSULE, LIQUID, OTHER }
+
+@Serializable
+enum class MedicationStatus { ACTIVE, SUSPENDED, INACTIVE }
 
 @Serializable
 data class ReplaceSchedule(
@@ -128,7 +160,7 @@ data class DoseOccurrence(
 )
 
 @Serializable
-enum class DoseStatus { PENDING, TAKEN, SKIPPED }
+enum class DoseStatus { PENDING, TAKEN, SKIPPED, MISSED }
 
 @Serializable
 data class StartPreparation(val periodStart: String, val periodEnd: String)
@@ -145,7 +177,7 @@ data class Preparation(
 )
 
 @Serializable
-enum class PreparationStatus { IN_PROGRESS, READY }
+enum class PreparationStatus { IN_PROGRESS, READY, CANCELLED }
 
 @Serializable
 data class UpdateCompartment(val status: CompartmentStatus, val note: String? = null)

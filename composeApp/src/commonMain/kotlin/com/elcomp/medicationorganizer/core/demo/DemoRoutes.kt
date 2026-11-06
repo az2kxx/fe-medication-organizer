@@ -39,6 +39,8 @@ internal class DemoRoutes(private val empty: Boolean = false) {
                 "GET /api/organizer-models/{id}" -> json(state.organizerModel(id()))
                 "GET /api/medications" -> json(state.medications())
                 "POST /api/medications" -> json(state.createMedication(request.decode()), HttpStatusCode.Created)
+                "PATCH /api/medications/{id}" -> json(state.updateMedication(id(), request.decode()))
+                "PATCH /api/medications/{id}/status" -> json(state.updateMedicationStatus(id(), request.decode()))
                 "PUT /api/medications/{id}/schedule" -> json(state.replaceSchedule(id(), request.decode()))
                 "GET /api/plan/daily" -> json(state.dailyPlan(organizerId(), date("date")))
                 "GET /api/plan/weekly" -> json(state.weeklyPlan(organizerId(), date("weekStart")))
@@ -136,15 +138,51 @@ private class DemoState(empty: Boolean) {
     fun medications(): List<Medication> = medications.values.map(StoredMedication::summary)
 
     fun createMedication(request: CreateMedication): Medication {
+        val fields = validateMedication(request)
+        val medication = Medication(nextId++, fields.name, MedicationStatus.ACTIVE)
+        medications[medication.id] = StoredMedication(medication, fields)
+        return medication
+    }
+
+    fun updateMedication(id: Long, request: UpdateMedication): Medication {
+        val current = medications[id] ?: missing("Unknown demo medication")
+        val fields = validateMedication(
+            CreateMedication(
+                name = request.name,
+                doseAmount = request.doseAmount,
+                doseUnit = request.doseUnit,
+                startDate = request.startDate,
+                endDate = request.endDate,
+                strengthValue = request.strengthValue,
+                strengthUnit = request.strengthUnit,
+                form = request.form,
+            ),
+        )
+        if (current.request == fields) return current.summary
+
+        val updated = current.summary.copy(name = fields.name)
+        medications[id] = StoredMedication(updated, fields)
+        removePendingDoses(id, DEMO_DATE)
+        return updated
+    }
+
+    fun updateMedicationStatus(id: Long, request: UpdateMedicationStatus): Medication {
+        val current = medications[id] ?: missing("Unknown demo medication")
+        if (current.summary.status == request.status) return current.summary
+
+        val updated = current.summary.copy(status = request.status)
+        medications[id] = current.copy(summary = updated)
+        if (request.status != MedicationStatus.ACTIVE) removePendingDoses(id, DEMO_DATE)
+        return updated
+    }
+
+    private fun validateMedication(request: CreateMedication): CreateMedication {
         require(request.name.isNotBlank() && request.doseUnit.isNotBlank())
         require(request.doseAmount.isPositiveDecimal())
         require(request.strengthValue?.isPositiveDecimal() != false)
         val start = dayOf(request.startDate)
         require(request.endDate?.let { dayOf(it) >= start } != false)
-
-        val medication = Medication(nextId++, request.name.trim(), "ACTIVE")
-        medications[medication.id] = StoredMedication(medication, request)
-        return medication
+        return request.copy(name = request.name.trim())
     }
 
     fun replaceSchedule(medicationId: Long, request: ReplaceSchedule): MedicationSchedule {
@@ -168,13 +206,17 @@ private class DemoState(empty: Boolean) {
                 versions[versions.lastIndex] = previous.copy(validUntil = dateOf(start - 1))
             }
         }
-        occurrences.entries.removeAll { (key, dose) ->
-            key.medicationId == medicationId && key.date >= request.validFrom && dose.status == DoseStatus.PENDING
-        }
+        removePendingDoses(medicationId, request.validFrom)
 
         return MedicationSchedule(
             nextId++, medicationId, request.validFrom, request.days, request.times, request.validUntil,
         ).also(versions::add)
+    }
+
+    private fun removePendingDoses(medicationId: Long, from: String) {
+        occurrences.entries.removeAll { (key, dose) ->
+            key.medicationId == medicationId && key.date >= from && dose.status == DoseStatus.PENDING
+        }
     }
 
     fun dailyPlan(organizerId: Long, date: String): List<DoseOccurrence> {
@@ -253,7 +295,7 @@ private class DemoState(empty: Boolean) {
 
     fun recordIntake(id: Long, request: RecordIntake): IntakeRecord {
         val (key, dose) = occurrences.entries.firstOrNull { it.value.id == id } ?: missing("Unknown demo dose")
-        if (dose.status != DoseStatus.PENDING) conflict("Intake already recorded for this dose")
+        if (dose.status != DoseStatus.PENDING) conflict("Demo dose is not pending")
         val status = when (request.status) {
             IntakeStatus.TAKEN -> DoseStatus.TAKEN
             IntakeStatus.SKIPPED -> DoseStatus.SKIPPED
@@ -274,6 +316,7 @@ private class DemoState(empty: Boolean) {
             val weekday = isoWeekday(day)
             for (medication in medications.values) {
                 val summary = medication.summary
+                if (summary.status != MedicationStatus.ACTIVE) continue
                 val request = medication.request
                 if (date < request.startDate || (request.endDate != null && date > request.endDate)) continue
                 val schedule = schedules[summary.id]?.lastOrNull {
@@ -302,7 +345,7 @@ private class DemoState(empty: Boolean) {
 
     private fun inProgress(id: Long): Preparation {
         val session = preparation?.takeIf { it.id == id } ?: missing("Unknown demo preparation")
-        if (session.status != PreparationStatus.IN_PROGRESS) conflict("Preparation is already complete")
+        if (session.status != PreparationStatus.IN_PROGRESS) conflict("Demo preparation is not in progress")
         return session
     }
 

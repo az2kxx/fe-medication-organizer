@@ -1,0 +1,7 @@
+{
+  "timestamp": "2026-11-02T09:00:00Z",
+  "status": 403,
+  "error": "Forbidden",
+  "message": "You do not have permission to perform this action",
+  "path": "/api/medications/12"
+}
