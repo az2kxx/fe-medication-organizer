@@ -1,0 +1,7 @@
+{
+  "timestamp": "2026-11-02T09:00:00Z",
+  "status": 404,
+  "error": "Not Found",
+  "message": "The requested resource was not found",
+  "path": "/api/medications/999"
+}

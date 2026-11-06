@@ -1,0 +1,16 @@
+{
+  "id": 30,
+  "userOrganizerId": 1,
+  "periodStart": "2026-11-02",
+  "periodEnd": "2026-11-02",
+  "status": "CANCELLED",
+  "compartments": [
+    {
+      "id": 100,
+      "compartmentDefinitionId": 8,
+      "status": "UNCHECKED",
+      "checkedAt": null
+    }
+  ],
+  "completedAt": null
+}

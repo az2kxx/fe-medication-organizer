@@ -1,0 +1,7 @@
+{
+  "timestamp": "2026-11-02T09:00:00Z",
+  "status": 401,
+  "error": "Unauthorized",
+  "message": "Authentication is required or the provided token is invalid",
+  "path": "/api/plan/daily"
+}
