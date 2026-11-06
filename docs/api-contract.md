@@ -1,24 +1,88 @@
 # Kontrakt API frontendu MVP
 
-Ta referencja opisuje umowę, na której oprzemy klienta Etapu I. Źródłem tras i przykładów jest sekcja 4 dokumentacji backendu, odczytana 6 listopada 2026. Przykłady zawierają skrócone odpowiedzi. Pełne DTO i rozbieżności ustalimy w FE-02. [Dokumentacja backendu](https://github.com/Matt1479/medication-organizer/blob/main/docs/design.md#4-api-contract) · [FE-02](https://github.com/az2kxx/fe-medication-organizer/issues/2)
+Żądania i odpowiedzi sukcesu dla rejestracji i logowania odpowiadają kodowi backendu z commita `47f51ad367d9847508a0b079a03aa52bd8fc813a`. Trasy i przykłady w sekcjach roboczych pochodzą z projektu i służą do pracy nad mockami. [Commit backendu](https://github.com/Matt1479/medication-organizer/commit/47f51ad367d9847508a0b079a03aa52bd8fc813a) · [Projekt kontraktu](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/docs/design.md#4-api-contract) · [FE-02](https://github.com/az2kxx/fe-medication-organizer/issues/2)
 
 ## Uruchomienie lokalne i tryby pracy
 
-FE-01 uruchamia lokalny szkielet aplikacji. Na tym etapie do uruchomienia wystarczą narzędzia frontendowe opisane w README. FE-02 przygotuje DTO i dane testowe na podstawie uzgodnionych payloadów. FE-03 doda klienta HTTP, wspólny interfejs repozytoriów oraz konfigurację przełączania trybu. [Uruchomienie projektu](../README.md) · [FE-02](https://github.com/az2kxx/fe-medication-organizer/issues/2) · [FE-03](https://github.com/az2kxx/fe-medication-organizer/issues/3)
+FE-01 uruchamia lokalny szkielet aplikacji. FE-02 dodaje DTO i fixture dla auth. FE-03 doda klienta HTTP, wspólny interfejs repozytoriów oraz konfigurację przełączania trybu. [Uruchomienie projektu](../README.md) · [FE-03](https://github.com/az2kxx/fe-medication-organizer/issues/3)
 
 | Tryb docelowy | Skąd pochodzą dane |
 | --- | --- |
-| `MOCK` | Lokalny adapter korzysta z fikcyjnych danych i obsługuje te same ścieżki żądań, odpowiedzi oraz błędów co `LIVE`. Zapis leku, harmonogramu, przygotowania lub przyjęcia dawki aktualizuje wspólny stan demonstracyjny. |
-| `LIVE` | Repozytoria wysyłają żądania HTTP do skonfigurowanego adresu backendu. Backend zwraca plan i rozstrzyga walidację, uprawnienia i konflikty. Błąd połączenia jest widoczny w aplikacji. |
+| `MOCK` | Lokalny adapter korzysta z fikcyjnych danych. Wdrożone operacje odtwarza według potwierdzonego kontraktu. Dla projektowanych tras używa roboczych kształtów odpowiedzi i błędów. Zapis leku, harmonogramu, przygotowania lub przyjęcia dawki aktualizuje wspólny stan demonstracyjny. |
+| `LIVE` | Repozytoria wysyłają żądania HTTP do skonfigurowanego adresu backendu po wdrożeniu i uzgodnieniu danej trasy. Błąd połączenia jest widoczny w aplikacji. |
 
-## Trasy i format danych
+## Potwierdzony kontrakt rejestracji i logowania
 
-Bazowa ścieżka to `/api`. Rejestracja, logowanie i odczyt katalogu są publiczne. Pozostałe trasy wymagają nagłówka `Authorization: Bearer <token>`. Backend sprawdza, czy użytkownik ma dostęp do zasobu.
+Bazowa ścieżka to `/api`. Backend zezwala na żądania do `/api/auth/**` bez sesji. Pozostałe żądania wymagają uwierzytelnienia przez `Authorization: Bearer <token>`. [Konfiguracja zabezpieczeń](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/config/SecurityConfig.java#L40-L51)
+
+### Rejestracja `POST /api/auth/register`
+
+Żądanie
+
+```json
+{
+  "email": "demo@example.com",
+  "password": "demo-password",
+  "displayName": "Ola"
+}
+```
+
+Odpowiedź `200 OK`
+
+```json
+{
+  "id": 1,
+  "email": "demo@example.com",
+  "displayName": "Ola",
+  "enabled": true,
+  "createdAt": "2026-10-30T08:00:00Z",
+  "updatedAt": "2026-10-30T08:00:00Z",
+  "roles": ["USER"]
+}
+```
+
+`email` i `password` są wymagane. `displayName` może być pominięte lub przekazane jako `null`. Odpowiedź użytkownika bez nazwy ma `"displayName": null`. Kotlin dekoduje `id` jako `Long`, oba znaczniki czasu jako `Instant` i wartości tablicy `roles` jako enum `USER` lub `ADMIN`. Po rejestracji klient przechodzi do logowania, aby otrzymać token. [Kontroler rejestracji](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/auth/AuthController.java#L48-L54) · [RegisterRequest](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/auth/dto/RegisterRequest.java#L7-L19) · [UserResponse](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/users/dto/UserResponse.java#L8-L15) · [Role](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/users/Role.java#L3-L6)
+
+### Logowanie `POST /api/auth/login`
+
+Żądanie
+
+```json
+{
+  "email": "demo@example.com",
+  "password": "demo-password"
+}
+```
+
+Odpowiedź `200 OK`
+
+```json
+{
+  "accessToken": "<jwt>",
+  "expiresInSeconds": 3600
+}
+```
+
+`expiresInSeconds` to liczba sekund typu `Long`. Wartość domyślna wynosi 3600, a backend może zmienić ją przez `JWT_TTL_MINUTES`. Odpowiedź zawiera wyłącznie token i jego czas ważności. [Kontroler logowania](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/auth/AuthController.java#L38-L46) · [LoginRequest](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/auth/dto/LoginRequest.java#L7-L16) · [TokenResponse](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/auth/dto/TokenResponse.java#L3) · [Czas ważności](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/auth/TokenService.java#L51-L53) · [Konfiguracja TTL](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/resources/application.yaml#L19-L21)
+
+Fixture testowe korzystają z fikcyjnych danych. Ścieżki prowadzą do JSON używanych w testach serializacji DTO.
+
+| Scenariusz | Żądanie | Odpowiedź |
+| --- | --- | --- |
+| Logowanie | [login-request.json](../composeApp/src/androidHostTest/resources/fixtures/auth/login-request.json) | [login-response.json](../composeApp/src/androidHostTest/resources/fixtures/auth/login-response.json) |
+| Rejestracja z nazwą | [register-request.json](../composeApp/src/androidHostTest/resources/fixtures/auth/register-request.json) | [register-response.json](../composeApp/src/androidHostTest/resources/fixtures/auth/register-response.json) |
+| Rejestracja bez nazwy | [register-request-no-display-name.json](../composeApp/src/androidHostTest/resources/fixtures/auth/register-request-no-display-name.json) | [register-response-null-display-name.json](../composeApp/src/androidHostTest/resources/fixtures/auth/register-response-null-display-name.json) |
+
+### Błędy
+
+Przy próbie rejestracji zajętego adresu e-mail serwis zgłasza `409 Conflict`. Kształt JSON błędów, odpowiedzi na błędne logowanie i szczegóły walidacji wymagają weryfikacji. Przykładowe `400`, `401`, `403`, `404`, `409` i `500` w mockach są scenariuszami roboczymi. [Sprawdzenie adresu e-mail](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/users/UserService.java#L26-L33)
+
+## Robocze trasy do mocków
+
+Projekt zakłada publiczny odczyt katalogu oraz uwierzytelnienie i kontrolę dostępu do pozostałych zasobów. Obecny backend udostępnia m.in. `GET /api/users/{id}` i `PATCH /api/users/change-display-name`. Odczyt przez ID jest dostępny dla uwierzytelnionych użytkowników niezależnie od właściciela profilu. Zmiana nazwy wymaga bieżącego hasła. Docelowe trasy profilu i preferencji poniżej pozostają do uzgodnienia przed integracją `LIVE`. [Kontroler użytkowników](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/users/UserController.java#L51-L81) · [Odczyt przez ID](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/users/UserService.java#L44-L50)
 
 | Metoda | Trasa | Zastosowanie |
 | --- | --- | --- |
-| `POST` | `/api/auth/register` | Rejestracja |
-| `POST` | `/api/auth/login` | Logowanie i token |
 | `GET`, `PATCH` | `/api/users/me` | Odczyt i edycja profilu |
 | `GET`, `PUT` | `/api/users/me/preferences` | Odczyt i zastąpienie preferencji |
 | `GET` | `/api/organizer-models` | Katalog i wyszukiwanie przez `qrCode` lub `productCode` |
@@ -42,58 +106,13 @@ Bazowa ścieżka to `/api`. Rejestracja, logowanie i odczyt katalogu są publicz
 
 `organizerId` w planie i `{id}` w trasach `/api/users/me/organizers/{id}/…` oznaczają identyfikator przypisania `UserOrganizer`. `compartmentId` w trasie aktualizacji oznacza `CompartmentDefinition.id`. Układ cyfrowej kasetki wynika z definicji przegródek i ich `positionIndex`.
 
-API wymienia JSON. Daty i godziny harmonogramu to wartości lokalne, np. `2026-10-30` i `08:00`. Czas zdarzenia to znacznik ISO 8601, np. `2026-10-30T08:05:00Z`. Ilość dawki i moc leku to liczby dziesiętne. DTO musi zachować ich precyzję. Dostępne preferencje to `simplifiedMode`, `textScale` i `highContrast`. Strefę czasową i ustawienia powiadomień obsługuje klient. Powiadomienia i ich odkładanie działają lokalnie w MVP.
+Projekt zakłada JSON. Daty i godziny harmonogramu to wartości lokalne, np. `2026-10-30` i `08:00`. Czas zdarzenia to znacznik ISO 8601, np. `2026-10-30T08:05:00Z`. Ilość dawki i moc leku to liczby dziesiętne. DTO musi zachować ich precyzję. Projektowane preferencje to `simplifiedMode`, `textScale` i `highContrast`. Strefę czasową i ustawienia powiadomień obsługuje klient. Powiadomienia i ich odkładanie działają lokalnie w MVP.
 
-Udane tworzenie zwykle zwraca `201`, odczyt i aktualizacja `200`, a wynik bez treści `204`. Kontrakt przewiduje `400` przy błędnych danych, `401` przy braku ważnej sesji, `403` przy braku uprawnień, `404` przy zasobie nieistniejącym lub niedostępnym, `409` przy konflikcie oraz `500` przy błędzie serwera. Szczegółowy format błędu i kody domenowe wymagają uzgodnienia w FE-02.
+Projekt przewiduje `201` dla tworzenia, `200` dla odczytu i aktualizacji oraz `204` dla odpowiedzi bez treści. Konkretne statusy i payloady potwierdzimy dla każdej wdrożonej trasy.
 
-## Przykładowe żądania i odpowiedzi
+## Robocze przykłady dla mocków
 
-Pola poniżej pochodzą z udokumentowanych przykładów. Dane demonstracyjne są fikcyjne. Skrócona odpowiedź pokazuje znane pola i może pomijać pozostałe dane.
-
-### Rejestracja `POST /api/auth/register`
-
-Żądanie
-
-```json
-{
-  "email": "demo@example.com",
-  "password": "demo-password",
-  "displayName": "Ola"
-}
-```
-
-Odpowiedź `201 Created`
-
-```json
-{
-  "id": 1,
-  "email": "demo@example.com",
-  "displayName": "Ola"
-}
-```
-
-Po rejestracji klient przechodzi do logowania, aby otrzymać token.
-
-### Logowanie `POST /api/auth/login`
-
-Żądanie
-
-```json
-{
-  "email": "demo@example.com",
-  "password": "demo-password"
-}
-```
-
-Odpowiedź `200 OK`
-
-```json
-{
-  "accessToken": "<jwt>",
-  "tokenType": "Bearer",
-  "expiresIn": 3600
-}
-```
+Przykłady pochodzą z projektu kontraktu i zawierają fikcyjne dane. Skrócone odpowiedzi pokazują tylko część projektowanych pól. [Projekt kontraktu](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/docs/design.md#4-api-contract)
 
 ### Dodanie leku `POST /api/medications`
 
@@ -207,4 +226,4 @@ Odpowiedź `200 OK`
 - Dozwolone pola mutacji bez przykładów, w tym `form` przy dodawaniu leku. W modelu danych jest `form`, a skrócone żądanie nie pokazuje tego pola. Trzeba potwierdzić wymagane i opcjonalne pola, dopuszczalne wartości `timeOfDay` oraz numerację dni tygodnia.
 - Reguły przypisania dawek do kasetki i przegródki oraz kształt odpowiedzi dla dawki bez przypisanej przegródki. Plan powinien przekazywać dane potrzebne kreatorowi i widokowi kasetki.
 - Reguła nadawania `MISSED`, zachowanie lokalnego czasu w razie zmiany strefy lub przejścia na czas letni i zimowy oraz obsługa ponownego zgłoszenia lub korekty intake.
-- Lista wymaganych przegródek do zakończenia przygotowania, sposób wskazania braków przy `409` i format błędów walidacji, w tym błędy poszczególnych pól.
+- Lista wymaganych przegródek do zakończenia przygotowania, sposób wskazania braków przy `409`, format błędów, kody domenowe i błędy poszczególnych pól walidacji.
