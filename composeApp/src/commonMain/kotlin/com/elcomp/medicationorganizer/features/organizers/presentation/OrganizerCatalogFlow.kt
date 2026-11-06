@@ -24,6 +24,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -328,30 +329,40 @@ private fun OrganizerLayoutGrid(model: OrganizerModelDetails) {
     }
 }
 
+/** What a compartment cell shows and announces. The physical label always leads; day and time add context. */
+internal data class CompartmentText(val label: String, val context: String?, val description: String)
+
+/** [rowHasDay] hides the day from the visible context when the row heading already shows it. */
+internal fun compartmentText(label: String, day: String?, time: String?, rowHasDay: Boolean): CompartmentText =
+    CompartmentText(
+        label = label,
+        context = listOfNotNull(day.takeUnless { rowHasDay }, time).joinToString(", ").ifEmpty { null },
+        description = listOfNotNull(label, day, time).joinToString(", "),
+    )
+
 @Composable
 private fun CompartmentCell(compartment: CompartmentDefinitionResponse, rowDay: Int?) {
-    val time = compartment.timeOfDay?.let { timeName(it) }
-    val day = compartment.dayOfWeek?.let { dayName(it) }
-    val text = when {
-        time == null -> compartment.label
-        rowDay == null && day != null -> "$day, $time"
-        else -> time
-    }
-    val description = listOfNotNull(day, time).joinToString(", ").ifEmpty { compartment.label }
+    val text = compartmentText(
+        label = compartment.label,
+        day = compartment.dayOfWeek?.let { dayName(it) },
+        time = compartment.timeOfDay?.let { timeName(it) },
+        rowHasDay = rowDay != null,
+    )
     Surface(
         modifier = Modifier
             .heightIn(min = 48.dp)
             .testTag("organizer-compartment-${compartment.id}")
-            .semantics(mergeDescendants = true) { contentDescription = description },
+            .clearAndSetSemantics { contentDescription = text.description },
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceVariant,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
-        Text(
-            text,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-            style = MaterialTheme.typography.bodyLarge,
-        )
+        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+            Text(text.label, style = MaterialTheme.typography.titleMedium)
+            text.context?.let {
+                Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
     }
 }
 

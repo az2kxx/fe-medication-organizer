@@ -260,7 +260,7 @@ class MainActivityTest {
         composeRule.onNodeWithText("Kasetka tygodniowa 7×3").assertExists()
         composeRule.onAllNodes(hasTestTag("organizer-layout-row")).assertCountEquals(7)
         composeRule.onNodeWithTag("organizer-compartment-102")
-            .assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf("Poniedziałek, Południe")))
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf("Pon. południe, Poniedziałek, Południe")))
         composeRule.onNodeWithTag("organizer-select").performScrollTo().assertIsEnabled().performClick()
         composeRule.onNodeWithTag("organizer-confirm").assertExists()
         composeRule.onNodeWithTag("organizer-assign-unavailable").performScrollTo().assertIsDisplayed()
@@ -294,7 +294,7 @@ class MainActivityTest {
         waitForNode(hasTestTag("organizer-details"))
         composeRule.onNodeWithText("Compartment layout").assertExists()
         composeRule.onNodeWithTag("organizer-compartment-204")
-            .assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf("Night")))
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf("noc, Night")))
     }
 
     @Test

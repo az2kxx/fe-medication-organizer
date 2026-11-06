@@ -154,6 +154,21 @@ class OrganizerCatalogRepositoryTest {
     }
 
     @Test
+    fun demoRepositoryReadsEveryCatalogModelWithTheSharedDto() = runBlocking<Unit> {
+        val services = AppServices.create(ApiSettings.Mock())
+        try {
+            val demo = assertNotNull(services.demo)
+            val catalog = assertNotNull(services.organizers)
+            for (id in listOf(DEMO_MODEL_ID, DEMO_MODEL_7X3_ID, DEMO_MODEL_DAILY_ID, DEMO_MODEL_INACTIVE_ID)) {
+                assertEquals(catalog.model(id), demo.organizerModel(id))
+            }
+            assertTrue(demo.organizerModel(DEMO_MODEL_DAILY_ID).compartments.all { it.dayOfWeek == null })
+        } finally {
+            services.close()
+        }
+    }
+
+    @Test
     fun demoPlanModelKeepsItsLayoutAfterSignIn() = runBlocking<Unit> {
         val services = AppServices.create(ApiSettings.Mock())
         try {

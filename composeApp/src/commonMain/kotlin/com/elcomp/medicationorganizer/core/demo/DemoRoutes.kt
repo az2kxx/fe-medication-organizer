@@ -116,15 +116,7 @@ private class DemoState(empty: Boolean) {
     private val intake = mutableListOf<IntakeRecord>()
     private var preparation: Preparation? = null
 
-    private val model = DemoCatalog.demoModel.let { catalog ->
-        OrganizerModel(
-            id = catalog.id,
-            name = catalog.name,
-            compartments = catalog.compartments.map {
-                CompartmentDefinition(it.id, it.positionIndex, checkNotNull(it.dayOfWeek), checkNotNull(it.timeOfDay))
-            },
-        )
-    }
+    private val model = DemoCatalog.demoModel
 
     init {
         if (!empty) {
