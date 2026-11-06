@@ -46,3 +46,7 @@ jobs:
           xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp
           -configuration Debug -destination 'generic/platform=iOS Simulator'
           -derivedDataPath build/xcode CODE_SIGNING_ALLOWED=NO build
+      - name: Verify Compose startup metadata
+        run: |
+          app_plist=build/xcode/Build/Products/Debug-iphonesimulator/iosApp.app/Info.plist
+          test "$(plutil -extract CADisableMinimumFrameDurationOnPhone raw -expect bool "$app_plist")" = true
