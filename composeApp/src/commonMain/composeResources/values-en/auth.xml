@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="auth_try_demo">Try the demo</string>
+    <string name="auth_login_title">Sign in</string>
+    <string name="auth_register_title">Create an account</string>
+    <string name="auth_back_to_login">Back to sign in</string>
+    <string name="auth_email_label">Email address</string>
+    <string name="auth_password_label">Password</string>
+    <string name="auth_display_name_label">Display name (optional)</string>
+    <string name="auth_email_required">Enter a valid email address.</string>
+    <string name="auth_password_required">Enter your password.</string>
+    <string name="auth_email_conflict">An account with this email address already exists.</string>
+    <string name="auth_registered">Account created. Sign in to continue.</string>
+    <string name="auth_wrong_credentials">Check your email address and password.</string>
+    <string name="auth_expired">Your session ended. Sign in again.</string>
+    <string name="auth_invalid_request">Check your details and try again.</string>
+    <string name="auth_network_error">Check your internet connection and try again.</string>
+    <string name="auth_timeout">The server is taking too long. Try again.</string>
+    <string name="auth_server_error">The server is temporarily unavailable. Try again.</string>
+    <string name="auth_request_failed">The request failed. Try again.</string>
+    <string name="auth_storage_unavailable">Secure session storage is unavailable. Try again.</string>
+    <string name="auth_logout">Sign out</string>
+    <string name="auth_logout_failed">Could not remove your saved session. Try again.</string>
+    <string name="auth_password_length">Use between 8 and 32 characters.</string>
+    <string name="auth_demo_register_hint">In demo mode, use an address at example.com, example.org, or example.net.</string>
+    <string name="auth_back_to_welcome">Back to welcome</string>
+</resources>

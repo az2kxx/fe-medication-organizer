@@ -16,7 +16,7 @@ Otwórz katalog repozytorium w Android Studio, ustaw JDK 21 jako Gradle JDK i ws
 ./gradlew :androidApp:assembleDebug :androidApp:testDebugUnitTest :composeApp:testAndroidHostTest
 ```
 
-APK pojawi się w `androidApp/build/outputs/apk/debug/`. Testy `androidApp` sprawdzają start w PL i EN, zakładki, powrót do kasetki, walidację profilu i blokadę ponownego wysłania podczas zapisu. Sprawdzają też dostęp do przycisku startowego i zakładek przy skali tekstu 200%. Testy hosta w `composeApp` sprawdzają serializację auth, transport oraz przebieg demo.
+APK pojawi się w `androidApp/build/outputs/apk/debug/`. Testy `androidApp` obejmują rejestrację i logowanie w demo, błędne hasło, konflikt adresu, wylogowanie i powrót do konta. Sprawdzają też nawigację w PL i EN, walidację profilu i dostęp do zakładek przy skali tekstu 200%. Testy hosta w `composeApp` sprawdzają kontrakt auth, sesję, transport oraz przebieg demo.
 
 ## iOS
 
@@ -29,19 +29,21 @@ xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
   -derivedDataPath build/xcode CODE_SIGNING_ALLOWED=NO build
 ```
 
-Polecenie sprawdza kompilację aplikacji i frameworka dla symulatora. Testy transportu i demo uruchomisz poleceniem `:composeApp:testAndroidHostTest` z sekcji Android. Jeśli uruchamiasz aplikację na urządzeniu, wybierz swój zespół w ustawieniach podpisywania Xcode.
+Polecenie sprawdza kompilację aplikacji i frameworka dla symulatora. Do testu sesji w `LIVE` uruchom aplikację poleceniem **Run** w Xcode. Przy budowaniu z terminala dla symulatora użyj `CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=-`, aby aplikacja miała dostęp do Keychain. Testy transportu i demo uruchomisz poleceniem `:composeApp:testAndroidHostTest` z sekcji Android. Jeśli uruchamiasz aplikację na urządzeniu, wybierz swój zespół w ustawieniach podpisywania Xcode.
 
 ### Nawigacja i dostępność na iOS
 
 1. Uruchom schemat `iosApp` w konfiguracji Debug na symulatorze. Zostaw domyślny tryb `MOCK`.
-2. Wybierz **Zacznij**, aby otworzyć Dzisiaj. Przejdź do kasetki główną akcją, otwórz Przygotowanie i wróć do Kasetki. Otwórz Historię dolną zakładką i wróć zakładką Dzisiaj.
-3. Z Dzisiaj otwórz Ustawienia i edycję profilu lokalnego. Spróbuj zapisać pustą nazwę i sprawdź komunikat przy polu. Wpisz fikcyjną nazwę i sprawdź wynik w Ustawieniach.
-4. Powtórz przebieg w polskiej i angielskiej wersji językowej symulatora. Zwiększ tekst w ustawieniach dostępności i sprawdź, czy główne przyciski oraz cztery zakładki pozostają dostępne.
-5. Na iPhonie włącz VoiceOver w `Ustawienia → Dostępność → VoiceOver`. Sprawdź kolejność fokusu na powitaniu, nazwy zakładek i odczyt wybranej zakładki, powrót z Przygotowania oraz odczyt nazwy pola i błędu w profilu. W symulatorze sprawdzisz etykiety i role przez Accessibility Inspector. [Testowanie dostępności w aplikacji](https://developer.apple.com/documentation/accessibility/performing-accessibility-testing-for-your-app)
+2. Wybierz **Wypróbuj demo**, aby zalogować się na fikcyjne konto i otworzyć Dzisiaj. Przejdź do kasetki główną akcją, otwórz Przygotowanie i wróć do Kasetki. Otwórz Historię dolną zakładką i wróć zakładką Dzisiaj.
+3. Z Dzisiaj otwórz Ustawienia i edycję profilu lokalnego. Spróbuj zapisać pustą nazwę i sprawdź komunikat przy polu. Wpisz fikcyjną nazwę, sprawdź wynik w Ustawieniach i wyloguj się. Zaloguj się ponownie danymi demo.
+4. Powtórz przebieg w polskiej i angielskiej wersji językowej symulatora. Zwiększ tekst w ustawieniach dostępności i sprawdź, czy formularz, główne przyciski i cztery zakładki pozostają dostępne.
+5. Na iPhonie włącz VoiceOver w `Ustawienia → Dostępność → VoiceOver`. Sprawdź kolejność fokusu i etykiety pól logowania, nazwy zakładek i odczyt wybranej zakładki oraz odczyt błędu przy polu. W symulatorze sprawdzisz etykiety i role przez Accessibility Inspector. [Testowanie dostępności w aplikacji](https://developer.apple.com/documentation/accessibility/performing-accessibility-testing-for-your-app)
 
 ## Tryby pracy
 
-Aplikacja domyślnie uruchamia się w `MOCK` ze scenariuszem `NORMAL`. Interfejs pokazuje aktywny tryb oraz nazwę scenariusza, jeśli wybrano inny niż domyślny. Przejście do Dzisiaj i opcjonalna edycja profilu korzystają z lokalnego stanu aplikacji. Warstwa transportu w `LIVE` udostępnia rejestrację i logowanie dla kolejnych funkcji. Leki, plan, przygotowanie i historia są dostępne w roboczym repozytorium `MOCK`. [Kontrakt API](docs/api-contract.md)
+Aplikacja domyślnie uruchamia się w `MOCK` ze scenariuszem `NORMAL`. Interfejs pokazuje aktywny tryb oraz nazwę scenariusza, jeśli wybrano inny niż domyślny. W `MOCK` możesz wypróbować fikcyjne konto lub użyć formularzy rejestracji i logowania. W `LIVE` **Zacznij** otwiera logowanie do wskazanego backendu. Leki, plan, przygotowanie i historia są dostępne w roboczym repozytorium `MOCK`. [Kontrakt API](docs/api-contract.md)
+
+Sesja `MOCK` istnieje w pamięci procesu. `LIVE` przechowuje token i czas wygaśnięcia w bezpiecznym magazynie platformy. Po ponownym uruchomieniu aplikacja może przywrócić ważną sesję dla tego samego adresu API. Wylogowanie, wygaśnięcie sesji lub odpowiedź `401` z chronionej trasy kieruje do logowania. [Obsługa sesji](docs/architecture.md#obsługa-sesji)
 
 Parametry startowe poniżej działają w konfiguracji `Debug`. W `LIVE` podaj sam origin, np. `https://api.example.com`. Repozytorium dodaje ścieżkę `/api`. Z lokalnym backendem połączysz się przez HTTP pod adresami z przykładów. Dla zdalnego backendu użyj HTTPS.
 
@@ -74,7 +76,9 @@ Przy zmianie trybu odznacz `ELCOMP_API_BASE_URL` dla `MOCK` lub `ELCOMP_MOCK_SCE
 
 ### Przebieg demo
 
-Testy oraz kod funkcji mogą tworzyć `AppServices.create(ApiSettings.Mock())` lub podać scenariusz w `ApiSettings.Mock(scenario)`. `services.auth` obsługuje fikcyjne konto `alex@example.com` z hasłem `example-password`. Rejestracja demo przyjmuje adresy z domen `example.com`, `example.org` i `example.net`. W `LIVE` użyj konta z danego środowiska backendu.
+Wybierz **Wypróbuj demo**, aby od razu zalogować się na fikcyjne konto. Jeśli otworzysz formularz **Zaloguj się**, użyj `alex@example.com` i hasła `example-password`. Aby sprawdzić rejestrację, załóż konto z nowym adresem w domenie `example.com`, `example.org` lub `example.net`. Po rejestracji aplikacja otworzy logowanie z uzupełnionym adresem e-mail. W `LIVE` użyj konta z danego środowiska backendu.
+
+Testy oraz kod funkcji mogą tworzyć `AppServices.create(ApiSettings.Mock())` lub podać scenariusz w `ApiSettings.Mock(scenario)`.
 
 | Scenariusz | Zachowanie transportu demo |
 | --- | --- |
@@ -84,9 +88,9 @@ Testy oraz kod funkcji mogą tworzyć `AppServices.create(ApiSettings.Mock())` l
 | `OFFLINE` | Każde żądanie daje bezpieczny błąd sieci `NETWORK`. |
 | `API_ERROR` | Każde żądanie zwraca HTTP `503`, które klient mapuje na `SERVER`. |
 
-W `NORMAL` odczytaj plan przez `services.demo` dla `DEMO_DATE` (`2026-11-02`) i `DEMO_ORGANIZER_ID` (`1`). Dodaj lek, przypisz mu dawkę o 20:00 i odczytaj plan ponownie. Przygotuj przegródki zgodnie z planem, oznacz przyjęcie jednej dawki i pominięcie drugiej. Kolejny odczyt historii pokaże obie deklaracje.
+W `NORMAL` zaloguj fikcyjne konto przez `services.signIn(LoginRequest(...))` przed odczytem planu z `services.demo`. Dla `DEMO_DATE` (`2026-11-02`) i `DEMO_ORGANIZER_ID` (`1`) dodaj lek, przypisz mu dawkę o 20:00 i odczytaj plan ponownie. Przygotuj przegródki zgodnie z planem, oznacz przyjęcie jednej dawki i pominięcie drugiej. Kolejny odczyt historii pokaże obie deklaracje.
 
-Demo zachowuje zmiany w pamięci danej instancji `AppServices`. `resetDemo()` przywraca początkowe konta i dane dla wybranego scenariusza. Ponowne uruchomienie aplikacji tworzy świeżą instancję, a stała data demo pozwala odtworzyć ten sam plan. Instancję utworzoną bezpośrednio w teście zwolnij po sprawdzeniu przez `close()`.
+Demo zachowuje zmiany w pamięci danej instancji `AppServices`. Wylogowanie przywraca robocze dane do stanu początkowego i pozwala ponownie zalogować się na konto utworzone w bieżącej instancji. `resetDemo()` przywraca także początkową listę kont. Ponowne uruchomienie aplikacji tworzy świeżą instancję, a stała data demo pozwala odtworzyć ten sam plan. Instancję utworzoną bezpośrednio w teście zwolnij po sprawdzeniu przez `close()`.
 
 ## Praca nad zadaniami
 

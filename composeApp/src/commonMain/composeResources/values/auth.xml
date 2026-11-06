@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="auth_try_demo">Wypróbuj demo</string>
+    <string name="auth_login_title">Zaloguj się</string>
+    <string name="auth_register_title">Utwórz konto</string>
+    <string name="auth_back_to_login">Wróć do logowania</string>
+    <string name="auth_email_label">Adres e-mail</string>
+    <string name="auth_password_label">Hasło</string>
+    <string name="auth_display_name_label">Nazwa wyświetlana (opcjonalnie)</string>
+    <string name="auth_email_required">Wpisz poprawny adres e-mail.</string>
+    <string name="auth_password_required">Wpisz hasło.</string>
+    <string name="auth_email_conflict">Konto z tym adresem e-mail już istnieje.</string>
+    <string name="auth_registered">Konto zostało utworzone. Zaloguj się.</string>
+    <string name="auth_wrong_credentials">Sprawdź adres e-mail i hasło.</string>
+    <string name="auth_expired">Sesja się zakończyła. Zaloguj się ponownie.</string>
+    <string name="auth_invalid_request">Sprawdź dane w formularzu i spróbuj ponownie.</string>
+    <string name="auth_network_error">Sprawdź połączenie z internetem i spróbuj ponownie.</string>
+    <string name="auth_timeout">Serwer odpowiada zbyt długo. Spróbuj ponownie.</string>
+    <string name="auth_server_error">Serwer jest chwilowo niedostępny. Spróbuj ponownie.</string>
+    <string name="auth_request_failed">Operacja się nie powiodła. Spróbuj ponownie.</string>
+    <string name="auth_storage_unavailable">Nie udało się uzyskać dostępu do bezpiecznego zapisu sesji. Spróbuj ponownie.</string>
+    <string name="auth_logout">Wyloguj się</string>
+    <string name="auth_logout_failed">Nie udało się usunąć zapisanej sesji. Spróbuj ponownie.</string>
+    <string name="auth_password_length">Hasło musi mieć od 8 do 32 znaków.</string>
+    <string name="auth_demo_register_hint">W trybie demo użyj adresu z domeny example.com, example.org lub example.net.</string>
+    <string name="auth_back_to_welcome">Wróć do powitania</string>
+</resources>

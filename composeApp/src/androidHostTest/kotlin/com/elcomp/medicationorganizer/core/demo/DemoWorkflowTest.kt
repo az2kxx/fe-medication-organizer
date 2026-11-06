@@ -20,6 +20,7 @@ class DemoWorkflowTest {
     fun medicationSchedulePreparationAndIntakeShareOneDemoState() = runBlocking<Unit> {
         val services = AppServices.create(ApiSettings.Mock())
         try {
+            services.signInWithDemoAccount()
             val demo = assertNotNull(services.demo)
             val initialDose = demo.dailyPlan().single()
             val amount = Json.parseToJsonElement("0.125").jsonPrimitive
@@ -65,6 +66,7 @@ class DemoWorkflowTest {
             assertEquals(listOf(taken, skipped), demo.intakeHistory())
 
             services.resetDemo()
+            services.signInWithDemoAccount()
             assertEquals(initialDose, demo.dailyPlan().single())
             assertEquals(1, demo.medications().size)
             assertTrue(demo.intakeHistory().isEmpty())
@@ -78,6 +80,7 @@ class DemoWorkflowTest {
     fun emptyDemoAcceptsMutationsAndCompletionChecksTheCurrentSchedule() = runBlocking<Unit> {
         val services = AppServices.create(ApiSettings.Mock(MockScenario.EMPTY))
         try {
+            services.signInWithDemoAccount()
             val demo = assertNotNull(services.demo)
             assertTrue(demo.medications().isEmpty())
             assertTrue(demo.dailyPlan().isEmpty())
@@ -101,6 +104,7 @@ class DemoWorkflowTest {
             assertEquals(PreparationStatus.READY, demo.completePreparation(preparation.id).status)
 
             services.resetDemo()
+            services.signInWithDemoAccount()
             assertTrue(demo.medications().isEmpty())
             assertTrue(demo.dailyPlan().isEmpty())
             assertEquals(ApiError.NOT_FOUND, assertFailsWith<ApiException> { demo.currentPreparation() }.error)

@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -34,15 +35,16 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.elcomp.medicationorganizer.core.network.ApiSettings
 import com.elcomp.medicationorganizer.core.network.MockScenario
+import com.elcomp.medicationorganizer.core.session.SessionStorageException
 import com.elcomp.medicationorganizer.core.ui.AppActionButton
 import com.elcomp.medicationorganizer.core.ui.AppEmptyState
 import com.elcomp.medicationorganizer.core.ui.AppErrorState
+import com.elcomp.medicationorganizer.core.ui.AppSubmitButton
 import com.elcomp.medicationorganizer.resources.*
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 private enum class Destination(val tag: String, val title: StringResource, val tab: MainTab? = null) {
-    Welcome("welcome-screen", Res.string.welcome_title),
     Today("screen-today", Res.string.navigation_today, MainTab.Today),
     Organizer("screen-organizer", Res.string.navigation_organizer, MainTab.Organizer),
     Medications("screen-medications", Res.string.navigation_medications, MainTab.Medications),
@@ -61,17 +63,21 @@ private fun MainTab.destination(): Destination = when (this) {
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-internal fun AppNavigation(settings: ApiSettings, invalidConfiguration: Boolean) {
-    var routeName by rememberSaveable { mutableStateOf(Destination.Welcome.name) }
+internal fun AppNavigation(
+    settings: ApiSettings,
+    invalidConfiguration: Boolean,
+    onSignOut: suspend () -> Unit,
+) {
+    var routeName by rememberSaveable { mutableStateOf(Destination.Today.name) }
     var displayName by rememberSaveable { mutableStateOf("") }
-    val route = Destination.entries.firstOrNull { it.name == routeName } ?: Destination.Welcome
+    val route = Destination.entries.firstOrNull { it.name == routeName } ?: Destination.Today
 
     fun navigate(destination: Destination) {
         routeName = destination.name
     }
 
     val backDestination = when (route) {
-        Destination.Welcome, Destination.Today -> null
+        Destination.Today -> null
         Destination.Preparation -> Destination.Organizer
         Destination.Profile -> Destination.Settings
         else -> Destination.Today
@@ -108,9 +114,8 @@ internal fun AppNavigation(settings: ApiSettings, invalidConfiguration: Boolean)
                         modifier = Modifier.semantics { heading() },
                         style = MaterialTheme.typography.headlineMedium,
                     )
-                    ModeStatus(settings, invalidConfiguration)
+                    AppModeStatus(settings, invalidConfiguration)
                     when (route) {
-                        Destination.Welcome -> WelcomeContent(onStart = { navigate(Destination.Today) })
                         Destination.Today -> TodayContent(
                             displayName = displayName,
                             onOrganizer = { navigate(Destination.Organizer) },
@@ -142,15 +147,11 @@ internal fun AppNavigation(settings: ApiSettings, invalidConfiguration: Boolean)
                             title = stringResource(Res.string.history_empty_title),
                             message = stringResource(Res.string.history_empty_message),
                         )
-                        Destination.Settings -> {
-                            Text(
-                                if (displayName.isBlank()) stringResource(Res.string.profile_name_missing)
-                                else stringResource(Res.string.profile_name_summary, displayName),
-                            )
-                            SecondaryAction(Res.string.navigation_open_profile, "navigation-open-profile") {
-                                navigate(Destination.Profile)
-                            }
-                        }
+                        Destination.Settings -> SettingsContent(
+                            displayName = displayName,
+                            onProfile = { navigate(Destination.Profile) },
+                            onSignOut = onSignOut,
+                        )
                         Destination.Profile -> {
                             LocalProfileForm(initialName = displayName) { name ->
                                 displayName = name
@@ -171,14 +172,32 @@ internal fun AppNavigation(settings: ApiSettings, invalidConfiguration: Boolean)
 }
 
 @Composable
-private fun WelcomeContent(onStart: () -> Unit) {
-    Text(stringResource(Res.string.welcome_description), style = MaterialTheme.typography.bodyLarge)
-    AppActionButton(
-        text = stringResource(Res.string.welcome_start),
-        onClick = onStart,
-        modifier = Modifier.fillMaxWidth().testTag("welcome-start"),
+private fun SettingsContent(
+    displayName: String,
+    onProfile: () -> Unit,
+    onSignOut: suspend () -> Unit,
+) {
+    var signOutFailed by remember { mutableStateOf(false) }
+    Text(
+        if (displayName.isBlank()) stringResource(Res.string.profile_name_missing)
+        else stringResource(Res.string.profile_name_summary, displayName),
     )
-    Text(stringResource(Res.string.app_data_note), style = MaterialTheme.typography.bodyMedium)
+    SecondaryAction(Res.string.navigation_open_profile, "navigation-open-profile", onProfile)
+    if (signOutFailed) {
+        AppErrorState(message = stringResource(Res.string.auth_logout_failed))
+    }
+    AppSubmitButton(
+        text = stringResource(Res.string.auth_logout),
+        onSubmit = {
+            signOutFailed = false
+            try {
+                onSignOut()
+            } catch (_: SessionStorageException) {
+                signOutFailed = true
+            }
+        },
+        modifier = Modifier.fillMaxWidth().testTag("settings-sign-out"),
+    )
 }
 
 @Composable
@@ -213,7 +232,7 @@ private fun TodayContent(displayName: String, onOrganizer: () -> Unit, onSetting
 }
 
 @Composable
-private fun ModeStatus(settings: ApiSettings, invalidConfiguration: Boolean) {
+internal fun AppModeStatus(settings: ApiSettings, invalidConfiguration: Boolean) {
     Text(
         stringResource(if (settings is ApiSettings.Mock) Res.string.app_mode_mock else Res.string.app_mode_live),
         style = MaterialTheme.typography.labelLarge,

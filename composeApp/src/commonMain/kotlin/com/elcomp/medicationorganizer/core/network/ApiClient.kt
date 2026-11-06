@@ -1,5 +1,6 @@
 package com.elcomp.medicationorganizer.core.network
 
+import com.elcomp.medicationorganizer.core.session.SessionManager
 import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.call.NoTransformationFoundException
@@ -10,11 +11,14 @@ import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.accept
+import io.ktor.client.request.header
 import io.ktor.client.request.request
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.ContentConvertException
 import io.ktor.serialization.kotlinx.json.json
@@ -39,38 +43,61 @@ internal fun HttpClientConfig<*>.configureApiClient() {
 internal class ApiClient(
     private val client: HttpClient,
     private val origin: String,
+    private val session: SessionManager? = null,
 ) {
-    suspend inline fun <reified Response> get(path: String): Response =
-        request<Unit, Response>(HttpMethod.Get, path, null)
+    suspend inline fun <reified Response> get(path: String, requiresSession: Boolean = false): Response =
+        request<Unit, Response>(HttpMethod.Get, path, null, requiresSession)
 
-    suspend inline fun <reified Response> post(path: String): Response =
-        request<Unit, Response>(HttpMethod.Post, path, null)
+    suspend inline fun <reified Response> post(path: String, requiresSession: Boolean = false): Response =
+        request<Unit, Response>(HttpMethod.Post, path, null, requiresSession)
 
-    suspend inline fun <reified Request, reified Response> post(path: String, body: Request): Response =
-        request(HttpMethod.Post, path, body)
+    suspend inline fun <reified Request, reified Response> post(
+        path: String,
+        body: Request,
+        requiresSession: Boolean = false,
+    ): Response = request(HttpMethod.Post, path, body, requiresSession)
 
-    suspend inline fun <reified Request, reified Response> put(path: String, body: Request): Response =
-        request(HttpMethod.Put, path, body)
+    suspend inline fun <reified Request, reified Response> put(
+        path: String,
+        body: Request,
+        requiresSession: Boolean = false,
+    ): Response = request(HttpMethod.Put, path, body, requiresSession)
 
-    suspend inline fun <reified Request, reified Response> patch(path: String, body: Request): Response =
-        request(HttpMethod.Patch, path, body)
+    suspend inline fun <reified Request, reified Response> patch(
+        path: String,
+        body: Request,
+        requiresSession: Boolean = false,
+    ): Response = request(HttpMethod.Patch, path, body, requiresSession)
 
     private suspend inline fun <reified Request, reified Response> request(
         verb: HttpMethod,
         path: String,
         body: Request?,
+        requiresSession: Boolean,
     ): Response {
+        require(path.startsWith("/api/"))
+        val lease = if (requiresSession) {
+            session?.requireSession() ?: throw ApiException(ApiError.UNAUTHORIZED)
+        } else {
+            null
+        }
         try {
             val response = client.request("$origin$path") {
                 method = verb
                 accept(ContentType.Application.Json)
+                if (lease != null) header(HttpHeaders.Authorization, "Bearer ${lease.token}")
                 if (body != null) {
                     contentType(ContentType.Application.Json)
                     setBody(body)
                 }
             }
+            if (lease != null && response.status == HttpStatusCode.Unauthorized) {
+                session?.reject(lease)
+            }
             response.checkStatus()
-            return response.body()
+            val result: Response = response.body()
+            if (lease != null) session?.ensureCurrent(lease)
+            return result
         } catch (_: HttpRequestTimeoutException) {
             throw ApiException(ApiError.TIMEOUT)
         } catch (_: ConnectTimeoutException) {

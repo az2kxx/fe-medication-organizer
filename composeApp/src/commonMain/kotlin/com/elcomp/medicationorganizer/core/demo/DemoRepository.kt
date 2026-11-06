@@ -15,40 +15,53 @@ class DemoRepository internal constructor(private val api: ApiClient) {
     suspend fun organizerModel(modelId: Long = DEMO_MODEL_ID): OrganizerModel =
         api.get("/api/organizer-models/$modelId")
 
-    suspend fun medications(): List<Medication> = api.get("/api/medications")
+    suspend fun medications(): List<Medication> = api.get("/api/medications", requiresSession = true)
 
     suspend fun createMedication(request: CreateMedication): Medication =
-        api.post("/api/medications", request)
+        api.post("/api/medications", request, requiresSession = true)
 
     suspend fun replaceSchedule(medicationId: Long, request: ReplaceSchedule): MedicationSchedule =
-        api.put("/api/medications/$medicationId/schedule", request)
+        api.put("/api/medications/$medicationId/schedule", request, requiresSession = true)
 
     suspend fun dailyPlan(date: String = DEMO_DATE, organizerId: Long = DEMO_ORGANIZER_ID): List<DoseOccurrence> =
-        api.get("/api/plan/daily?date=${date.encodeURLQueryComponent()}&organizerId=$organizerId")
+        api.get(
+            "/api/plan/daily?date=${date.encodeURLQueryComponent()}&organizerId=$organizerId",
+            requiresSession = true,
+        )
 
     suspend fun weeklyPlan(weekStart: String = DEMO_DATE, organizerId: Long = DEMO_ORGANIZER_ID): List<DoseOccurrence> =
-        api.get("/api/plan/weekly?weekStart=${weekStart.encodeURLQueryComponent()}&organizerId=$organizerId")
+        api.get(
+            "/api/plan/weekly?weekStart=${weekStart.encodeURLQueryComponent()}&organizerId=$organizerId",
+            requiresSession = true,
+        )
 
     suspend fun startPreparation(request: StartPreparation, organizerId: Long = DEMO_ORGANIZER_ID): Preparation =
-        api.post("/api/users/me/organizers/$organizerId/preparations", request)
+        api.post("/api/users/me/organizers/$organizerId/preparations", request, requiresSession = true)
 
     suspend fun currentPreparation(organizerId: Long = DEMO_ORGANIZER_ID): Preparation =
-        api.get("/api/users/me/organizers/$organizerId/preparations/current")
+        api.get("/api/users/me/organizers/$organizerId/preparations/current", requiresSession = true)
 
     suspend fun markCompartment(
         preparationId: Long,
         compartmentId: Long,
         request: UpdateCompartment,
-    ): CompartmentProgress = api.patch("/api/preparations/$preparationId/compartments/$compartmentId", request)
+    ): CompartmentProgress = api.patch(
+        "/api/preparations/$preparationId/compartments/$compartmentId",
+        request,
+        requiresSession = true,
+    )
 
     suspend fun completePreparation(preparationId: Long): Preparation =
-        api.post("/api/preparations/$preparationId/complete")
+        api.post("/api/preparations/$preparationId/complete", requiresSession = true)
 
     suspend fun recordIntake(occurrenceId: Long, request: RecordIntake): IntakeRecord =
-        api.post("/api/dose-occurrences/$occurrenceId/intake", request)
+        api.post("/api/dose-occurrences/$occurrenceId/intake", request, requiresSession = true)
 
     suspend fun intakeHistory(from: String = DEMO_DATE, to: String = from): List<IntakeRecord> =
-        api.get("/api/intake?from=${from.encodeURLQueryComponent()}&to=${to.encodeURLQueryComponent()}")
+        api.get(
+            "/api/intake?from=${from.encodeURLQueryComponent()}&to=${to.encodeURLQueryComponent()}",
+            requiresSession = true,
+        )
 }
 
 @Serializable

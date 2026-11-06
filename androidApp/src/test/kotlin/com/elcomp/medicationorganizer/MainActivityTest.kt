@@ -2,6 +2,7 @@ package com.elcomp.medicationorganizer
 
 import androidx.activity.compose.setContent
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
@@ -12,6 +13,8 @@ import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -38,10 +41,10 @@ class MainActivityTest {
 
     @Test
     fun launcherShowsWelcomeWithoutRequestingAName() {
-        composeRule.onNodeWithTag("welcome-screen").assertIsDisplayed()
+        assertEventuallyDisplayed(hasTestTag("welcome-screen"))
         composeRule.onNodeWithText("Witaj w EL COMP").assertIsDisplayed()
         composeRule.onNodeWithText("Tryb demo (MOCK)").assertIsDisplayed()
-        composeRule.onNodeWithText("Zacznij").assertIsDisplayed()
+        composeRule.onNodeWithText("Wypróbuj demo").assertIsDisplayed()
         composeRule.onAllNodes(hasSetTextAction()).assertCountEquals(0)
         startFromWelcome()
     }
@@ -49,9 +52,80 @@ class MainActivityTest {
     @Test
     @Config(qualifiers = "en-rUS-w360dp-h640dp")
     fun launcherUsesEnglishResources() {
-        composeRule.onNodeWithText("Welcome to EL COMP").assertIsDisplayed()
+        assertEventuallyDisplayed(hasText("Welcome to EL COMP"))
         composeRule.onNodeWithText("Demo mode (MOCK)").assertIsDisplayed()
-        composeRule.onNodeWithText("Get started").assertIsDisplayed()
+        composeRule.onNodeWithText("Try the demo").assertIsDisplayed()
+    }
+
+    @Test
+    fun demoRegistrationRequiresLoginAndAccountSurvivesLogout() {
+        val email = "ola@example.org"
+        val password = "test-password"
+        openAuthRegistration()
+        replaceField("auth-email", email)
+        replaceField("auth-password", password)
+        replaceField("auth-display-name", "Ola")
+        submitAuth()
+
+        assertEventuallyDisplayed(hasTestTag("auth-login"))
+        composeRule.onNodeWithText("Konto zostało utworzone. Zaloguj się.").assertIsDisplayed()
+        assertFieldValue("auth-email", email)
+        assertFieldValue("auth-password", "")
+        composeRule.onNodeWithTag("tab-today").assertDoesNotExist()
+
+        replaceField("auth-password", password)
+        submitAuth()
+        assertEventuallyDisplayed(hasTestTag("screen-today"))
+
+        composeRule.onNodeWithTag("today-open-settings").performScrollTo().performClick()
+        composeRule.onNodeWithTag("navigation-open-profile").performScrollTo().performClick()
+        replaceField("profile-name", "Tymczasowa nazwa")
+        composeRule.onNodeWithTag("profile-submit").performScrollTo().performClick()
+        composeRule.onNodeWithText("Nazwa wyświetlana: Tymczasowa nazwa").assertIsDisplayed()
+        composeRule.onNodeWithTag("settings-sign-out").performScrollTo().performClick()
+
+        assertEventuallyDisplayed(hasTestTag("auth-login"))
+        composeRule.onNodeWithTag("tab-today").assertDoesNotExist()
+        assertFieldValue("auth-password", "")
+
+        replaceField("auth-email", email)
+        replaceField("auth-password", password)
+        submitAuth()
+        assertEventuallyDisplayed(hasTestTag("screen-today"))
+        composeRule.onNodeWithTag("today-open-settings").performScrollTo().performClick()
+        composeRule.onNodeWithTag("screen-settings").assertIsDisplayed()
+        composeRule.onNodeWithText("Nazwa wyświetlana: Tymczasowa nazwa").assertDoesNotExist()
+    }
+
+    @Test
+    fun loginRejectsWrongPasswordAndAllowsRetry() {
+        openAuthLogin()
+        replaceField("auth-email", "alex@example.com")
+        replaceField("auth-password", "wrong-password")
+        submitAuth()
+
+        assertEventuallyDisplayed(hasText("Sprawdź adres e-mail i hasło."))
+        composeRule.onNodeWithTag("auth-login").assertIsDisplayed()
+        composeRule.onNodeWithTag("tab-today").assertDoesNotExist()
+
+        replaceField("auth-password", "example-password")
+        submitAuth()
+        assertEventuallyDisplayed(hasTestTag("screen-today"))
+    }
+
+    @Test
+    fun registrationReportsConflictOnEmailField() {
+        openAuthRegistration()
+        replaceField("auth-email", "alex@example.com")
+        replaceField("auth-password", "example-password")
+        submitAuth()
+
+        val error = "Konto z tym adresem e-mail już istnieje."
+        assertEventuallyDisplayed(hasText(error))
+        composeRule.onNodeWithTag("auth-register").assertIsDisplayed()
+        composeRule.onNodeWithTag("auth-email")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Error, error))
+        composeRule.onNodeWithTag("tab-today").assertDoesNotExist()
     }
 
     @Test
@@ -143,8 +217,41 @@ class MainActivityTest {
     }
 
     private fun startFromWelcome() {
+        assertEventuallyDisplayed(hasTestTag("welcome-screen"))
         composeRule.onNodeWithTag("welcome-start").performScrollTo().assertIsDisplayed().performClick()
-        composeRule.onNodeWithTag("screen-today").assertIsDisplayed()
+        assertEventuallyDisplayed(hasTestTag("screen-today"))
+    }
+
+    private fun openAuthLogin() {
+        assertEventuallyDisplayed(hasTestTag("welcome-screen"))
+        composeRule.onNodeWithTag("welcome-login").performScrollTo().performClick()
+        composeRule.onNodeWithTag("auth-login").assertIsDisplayed()
+    }
+
+    private fun openAuthRegistration() {
+        openAuthLogin()
+        composeRule.onNodeWithTag("auth-open-register").performScrollTo().performClick()
+        composeRule.onNodeWithTag("auth-register").assertIsDisplayed()
+    }
+
+    private fun replaceField(tag: String, value: String) {
+        composeRule.onNodeWithTag(tag).performScrollTo().performTextReplacement(value)
+    }
+
+    private fun assertFieldValue(tag: String, value: String) {
+        composeRule.onNodeWithTag(tag)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString(value)))
+    }
+
+    private fun submitAuth() {
+        composeRule.onNodeWithTag("auth-submit").performScrollTo().performClick()
+    }
+
+    private fun assertEventuallyDisplayed(matcher: SemanticsMatcher) {
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.onAllNodes(matcher).fetchSemanticsNodes(atLeastOneRootRequired = false).isNotEmpty()
+        }
+        composeRule.onNode(matcher).assertIsDisplayed()
     }
 
     private fun openPreparation() {

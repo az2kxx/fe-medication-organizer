@@ -8,6 +8,8 @@ import androidx.activity.enableEdgeToEdge
 import com.elcomp.medicationorganizer.app.App
 import com.elcomp.medicationorganizer.app.AppLaunchConfig
 import com.elcomp.medicationorganizer.app.resolveAppLaunchConfig
+import com.elcomp.medicationorganizer.core.network.ApiSettings
+import com.elcomp.medicationorganizer.core.session.AndroidSessionTokenStore
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,7 +24,12 @@ class MainActivity : ComponentActivity() {
         } else {
             AppLaunchConfig()
         }
-        setContent { App(launchConfig) }
+        val sessionStore = if (launchConfig.settings is ApiSettings.Live) {
+            AndroidSessionTokenStore(applicationContext)
+        } else {
+            null
+        }
+        setContent { App(launchConfig, sessionStore) }
     }
 }
 
