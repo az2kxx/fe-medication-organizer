@@ -18,10 +18,10 @@ Kod każdej funkcji trzymajcie pod `features/<feature>/`. `presentation` zawiera
 
 ## Dane i praca równoległa
 
-Ekran przekazuje zdarzenia do ViewModelu i renderuje stan UI. ViewModel korzysta z interfejsu repozytorium, a warstwa `data` dostarcza jego implementację. Wybór transportu odbywa się przy składaniu zależności w `app`. Oba tryby korzystają z tych samych ekranów i modeli domenowych.
+Ekran przekazuje zdarzenia do ViewModelu i renderuje stan UI. ViewModel korzysta z interfejsu repozytorium, a warstwa `data` dostarcza jego implementację. Host wybiera `ApiSettings` przy starcie i tworzy `AppServices`. Ta sama implementacja repozytorium rejestracji i logowania używa wspólnego klienta Ktor w obu trybach.
 
-FE-02 ustala DTO i przygotowuje przykładowe żądania oraz odpowiedzi. FE-03 dodaje klienta HTTP, stanowe mocki i przełącznik `MOCK`/`LIVE`. Do tego czasu ekran FE-01 uruchamia się lokalnie bez backendu. Szczegóły payloadów i pytania do backendu są w kontrakcie. [Kontrakt API](api-contract.md) · [FE-02](https://github.com/az2kxx/fe-medication-organizer/issues/2) · [FE-03](https://github.com/az2kxx/fe-medication-organizer/issues/3)
+Rejestracja i logowanie używają DTO zgodnych z kodem backendu. W `MOCK` na żądania odpowiada Ktor `MockEngine`, a `LIVE` kieruje je do skonfigurowanego adresu API. Robocze operacje leków, planu, przygotowania i historii korzystają ze wspólnego stanu demo w `MOCK`. [Kontrakt API](api-contract.md)
 
-Uzgodnijcie interfejs repozytorium przed równoległą implementacją UI i transportu. Po zmianie leku mock powinien odświeżyć plan, a po potwierdzeniu przyjęcia dawki uaktualnić historię. Dzięki temu obie osoby mogą sprawdzić ten sam scenariusz na danych demonstracyjnych.
+Uzgodnijcie interfejs repozytorium przed równoległą implementacją UI i transportu. Podłączcie kolejne ekrany do jednej instancji `AppServices`, aby ponowny odczyt planu po zmianie leku lub historii po potwierdzeniu dawki pokazywał aktualny stan demo.
 
 Komendy uruchomienia i wymagane SDK są w README. [Uruchomienie projektu](../README.md)
