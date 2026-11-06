@@ -66,7 +66,11 @@ class ApiTransportTest {
             assertEquals(setOf(UserRole.USER), user.roles)
 
             val login = LoginRequest(registration.email, registration.password)
-            assertEquals("demo-token", services.auth.login(login).accessToken)
+            val firstToken = services.auth.login(login).accessToken
+            val secondToken = services.auth.login(login).accessToken
+            assertTrue(firstToken.startsWith("demo-token-"))
+            assertTrue(secondToken.startsWith("demo-token-"))
+            assertFalse(firstToken == secondToken)
             val duplicate = assertFailsWith<ApiException> { services.auth.register(registration) }
             assertEquals(ApiError.CONFLICT, duplicate.error)
             assertEquals(409, duplicate.statusCode)
@@ -75,7 +79,7 @@ class ApiTransportTest {
             assertEquals(ApiError.UNAUTHORIZED, assertFailsWith<ApiException> {
                 services.auth.login(login)
             }.error)
-            assertEquals("demo-token", services.auth.login(demoLogin).accessToken)
+            assertTrue(services.auth.login(demoLogin).accessToken.startsWith("demo-token-"))
         } finally {
             services.close()
         }
@@ -108,7 +112,7 @@ class ApiTransportTest {
             assertFailsWith<CancellationException> {
                 withTimeout(50) { services.auth.login(demoLogin) }
             }
-            assertEquals("demo-token", services.auth.login(demoLogin).accessToken)
+            assertTrue(services.auth.login(demoLogin).accessToken.startsWith("demo-token-"))
         } finally {
             services.close()
         }

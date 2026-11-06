@@ -15,6 +15,8 @@ Oba tryby używają tych samych DTO rejestracji i logowania. Tryb, scenariusz de
 
 Bazowa ścieżka to `/api`. Backend zezwala na żądania do `/api/auth/**` bez sesji. Pozostałe żądania wymagają uwierzytelnienia przez `Authorization: Bearer <token>`. [Konfiguracja zabezpieczeń](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/config/SecurityConfig.java#L40-L51)
 
+W `MOCK` publiczne są logowanie, rejestracja i odczyt modelu kasetki. Robocze trasy leków, planu, przygotowania i deklaracji przyjęcia wymagają ważnej sesji demo. Klient używa odpowiedzi `401` z chronionej trasy jako sygnału do zakończenia sesji. [Obsługa sesji](architecture.md#obsługa-sesji)
+
 ### Rejestracja `POST /api/auth/register`
 
 Żądanie
