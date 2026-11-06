@@ -20,36 +20,32 @@ import org.jetbrains.compose.resources.stringResource
 private const val maxDisplayNameLength = 32
 
 @Composable
-internal fun LocalProfileForm(initialName: String, editing: Boolean, onSave: (String) -> Unit) {
+internal fun LocalProfileForm(initialName: String, onSave: (String) -> Unit) {
     var draft by rememberSaveable(initialName) { mutableStateOf(initialName) }
     var submitted by rememberSaveable { mutableStateOf(false) }
     val normalizedName = draft.trim()
     val error = when {
-        normalizedName.isEmpty() -> Res.string.setup_name_required
-        normalizedName.length > maxDisplayNameLength -> Res.string.setup_name_too_long
+        normalizedName.isEmpty() -> Res.string.profile_name_required
+        normalizedName.length > maxDisplayNameLength -> Res.string.profile_name_too_long
         else -> null
     }
-    val tagPrefix = if (editing) "profile" else "setup"
 
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(stringResource(Res.string.setup_local_description))
+        Text(stringResource(Res.string.profile_local_description))
         AppTextField(
             value = draft,
             onValueChange = { draft = it },
-            label = stringResource(Res.string.setup_name_label),
-            modifier = Modifier.testTag(tagPrefix + "-name"),
+            label = stringResource(Res.string.profile_name_label),
+            modifier = Modifier.testTag("profile-name"),
             errorMessage = if (submitted && error != null) stringResource(error) else null,
         )
         AppSubmitButton(
-            text = stringResource(if (editing) Res.string.profile_save else Res.string.setup_continue),
+            text = stringResource(Res.string.profile_save),
             onSubmit = {
                 submitted = true
                 if (error == null) onSave(normalizedName)
             },
-            modifier = Modifier.fillMaxWidth().testTag(tagPrefix + "-submit"),
+            modifier = Modifier.fillMaxWidth().testTag("profile-submit"),
         )
-        if (!editing) {
-            Text(stringResource(Res.string.app_data_note))
-        }
     }
 }

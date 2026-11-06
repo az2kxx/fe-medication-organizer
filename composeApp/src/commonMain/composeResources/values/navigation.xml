@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_brand">EL COMP</string>
-    <string name="app_product">Cyfrowa kasetka</string>
     <string name="app_mode_mock">Tryb demo (MOCK)</string>
     <string name="app_mode_live">Tryb LIVE</string>
     <string name="app_scenario_empty">Scenariusz demo EMPTY</string>
@@ -11,38 +9,41 @@
     <string name="app_configuration_warning">Nieprawidłowa konfiguracja. Uruchomiono tryb demo.</string>
     <string name="app_data_note">Dane o lekach i potwierdzenia wpisujesz samodzielnie. Aplikacja pomaga je uporządkować.</string>
 
-    <string name="setup_title">Konfiguracja lokalna</string>
-    <string name="setup_local_description">Wybierz nazwę widoczną w aplikacji podczas tej sesji.</string>
-    <string name="setup_name_label">Nazwa wyświetlana</string>
-    <string name="setup_name_required">Wpisz nazwę wyświetlaną.</string>
-    <string name="setup_name_too_long">Nazwa może mieć najwyżej 32 znaki.</string>
-    <string name="setup_continue">Przejdź do Dzisiaj</string>
-    <string name="profile_title">Profil lokalny</string>
-    <string name="profile_save">Zapisz nazwę</string>
-    <string name="profile_name_summary">Nazwa wyświetlana: %1$s</string>
+    <string name="welcome_title">Witaj w EL COMP</string>
+    <string name="welcome_description">Kasetka, lista leków i plan dnia w jednym miejscu.</string>
+    <string name="welcome_start">Zacznij</string>
 
-    <string name="navigation_open_menu">Menu</string>
-    <string name="navigation_menu_title">Sekcje aplikacji</string>
-    <string name="navigation_close_menu">Zamknij menu</string>
-    <string name="navigation_back_today">Wróć do Dzisiaj</string>
-    <string name="navigation_open_profile">Edytuj profil lokalny</string>
-    <string name="navigation_back_settings">Wróć do ustawień</string>
     <string name="navigation_today">Dzisiaj</string>
     <string name="navigation_organizer">Kasetka</string>
     <string name="navigation_medications">Leki</string>
-    <string name="navigation_preparation">Przygotowanie</string>
     <string name="navigation_history">Historia</string>
+    <string name="navigation_preparation">Przygotowanie</string>
     <string name="navigation_settings">Ustawienia</string>
+    <string name="navigation_open_profile">Edytuj profil lokalny</string>
+    <string name="navigation_back_settings">Wróć do ustawień</string>
 
     <string name="today_greeting">Witaj, %1$s</string>
-    <string name="today_empty_title">Brak planu na dziś</string>
-    <string name="today_empty_message">Plan dnia pojawi się po ustawieniu harmonogramu.</string>
-    <string name="organizer_empty_title">Brak kasetki</string>
-    <string name="organizer_empty_message">Tutaj zobaczysz przegródki wybranej kasetki.</string>
-    <string name="medications_empty_title">Brak leków na liście</string>
-    <string name="medications_empty_message">Tutaj zobaczysz leki, które dodasz.</string>
+    <string name="today_description">Tutaj zobaczysz swój plan przyjęć na dziś.</string>
+    <string name="today_first_step_title">Zacznij od kasetki</string>
+    <string name="today_first_step_description">W sekcji Kasetka znajdziesz układ przegródek i ich przygotowanie.</string>
+    <string name="today_open_organizer">Otwórz kasetkę</string>
+
+    <string name="organizer_description">Tutaj zobaczysz układ przegródek swojej kasetki.</string>
+    <string name="organizer_open_preparation">Przygotowanie kasetki</string>
+    <string name="preparation_back_organizer">Wróć do kasetki</string>
     <string name="preparation_empty_title">Brak rozpoczętego przygotowania</string>
-    <string name="preparation_empty_message">Tutaj sprawdzisz postęp przygotowania kasetki.</string>
+    <string name="preparation_empty_message">Tutaj sprawdzisz, które przegródki są gotowe.</string>
+    <string name="medications_empty_title">Brak leków na liście</string>
+    <string name="medications_empty_message">Tutaj zobaczysz swoją listę leków i ich harmonogramy.</string>
     <string name="history_empty_title">Brak potwierdzeń</string>
-    <string name="history_empty_message">Tutaj zobaczysz zapisane potwierdzenia przyjęcia lub pominięcia dawki.</string>
+    <string name="history_empty_message">Tutaj zobaczysz potwierdzenia przyjęcia lub pominięcia dawek.</string>
+
+    <string name="profile_title">Profil lokalny</string>
+    <string name="profile_local_description">Wybierz nazwę widoczną w aplikacji podczas tej sesji.</string>
+    <string name="profile_name_label">Nazwa wyświetlana</string>
+    <string name="profile_name_required">Wpisz nazwę wyświetlaną.</string>
+    <string name="profile_name_too_long">Nazwa może mieć najwyżej 32 znaki.</string>
+    <string name="profile_name_missing">Dodaj nazwę wyświetlaną</string>
+    <string name="profile_name_summary">Nazwa wyświetlana: %1$s</string>
+    <string name="profile_save">Zapisz nazwę</string>
 </resources>

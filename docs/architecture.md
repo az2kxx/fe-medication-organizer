@@ -1,6 +1,6 @@
 # Architektura frontendu
 
-Frontend EL COMP to aplikacja mobilna Kotlin Multiplatform z interfejsem Compose Multiplatform dla Androida i iOS. Obie platformy uruchamiają tę samą konfigurację lokalną, ekran Dzisiaj i menu głównych sekcji. [FE-04](https://github.com/az2kxx/fe-medication-organizer/issues/4)
+Frontend EL COMP to aplikacja mobilna Kotlin Multiplatform z interfejsem Compose Multiplatform dla Androida i iOS. Obie platformy korzystają ze wspólnego powitania, ekranu Dzisiaj i dolnej nawigacji. [FE-04](https://github.com/az2kxx/fe-medication-organizer/issues/4)
 
 ## Moduły i źródła
 
@@ -14,7 +14,7 @@ Frontend EL COMP to aplikacja mobilna Kotlin Multiplatform z interfejsem Compose
 
 Punkt wejścia do wspólnego UI znajduje się w pakiecie `app`. Przy kolejnych zadaniach dodawajcie pakiety, gdy pojawi się kod, który do nich należy. `app` scala zależności i zawiera nawigację. `core/ui` gromadzi współdzielone komponenty i motyw. `core/network` zawiera wspólną konfigurację transportu, autoryzacji i obsługi błędów. `core/demo` przechowuje fikcyjne dane i stan demonstracyjny.
 
-Konfiguracja zapisuje nazwę wyświetlaną w lokalnym stanie interfejsu i otwiera Dzisiaj. Menu prowadzi do Dzisiaj, Kasetki, Leków, Przygotowania, Historii i Ustawień. Ustawienia prowadzą do edycji lokalnej nazwy. Nawigacja i konfiguracja działają niezależnie od trybu transportu.
+Powitanie otwiera Dzisiaj po wybraniu **Zacznij**. Dolne zakładki prowadzą bezpośrednio do Dzisiaj, Kasetki, Leków i Historii. Przygotowanie jest podstroną Kasetki i prowadzi z powrotem do Kasetki. Ustawienia są dostępne z Dzisiaj, a z nich można przejść do opcjonalnej edycji lokalnego profilu. Nawigacja i nazwa wyświetlana korzystają z lokalnego stanu interfejsu niezależnie od trybu transportu.
 
 Wspólne komponenty w `core/ui` obsługują pola z błędami, blokadę ponownego wysłania formularza podczas zapisu, a także stany ładowania, pustej listy i błędu z akcją ponowienia. Tekst i semantyka nadają znaczenie statusom, a ikony wspierają ich odczyt. Napisy oraz etykiety dostępności są w zasobach Compose z wersjami PL i EN.
 

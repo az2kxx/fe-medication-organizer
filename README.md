@@ -1,6 +1,6 @@
 # Medication Organizer
 
-Mobilny frontend kasetki EL COMP. Android i iOS korzystają ze wspólnej konfiguracji lokalnej, ekranu Dzisiaj i menu napisanych w Kotlin i Compose Multiplatform.
+Mobilny frontend kasetki EL COMP. Android i iOS korzystają ze wspólnego powitania, ekranu Dzisiaj i dolnych zakładek napisanych w Kotlin i Compose Multiplatform.
 
 ## Środowisko
 
@@ -16,7 +16,7 @@ Otwórz katalog repozytorium w Android Studio, ustaw JDK 21 jako Gradle JDK i ws
 ./gradlew :androidApp:assembleDebug :androidApp:testDebugUnitTest :composeApp:testAndroidHostTest
 ```
 
-APK pojawi się w `androidApp/build/outputs/apk/debug/`. Testy `androidApp` sprawdzają start w PL i EN, walidację, nawigację, dostęp do przycisku przy skali tekstu 200% i blokadę ponownego wysłania podczas zapisu. Testy hosta w `composeApp` sprawdzają serializację auth, transport oraz przebieg demo.
+APK pojawi się w `androidApp/build/outputs/apk/debug/`. Testy `androidApp` sprawdzają start w PL i EN, zakładki, powrót do kasetki, walidację profilu i blokadę ponownego wysłania podczas zapisu. Sprawdzają też dostęp do przycisku startowego i zakładek przy skali tekstu 200%. Testy hosta w `composeApp` sprawdzają serializację auth, transport oraz przebieg demo.
 
 ## iOS
 
@@ -31,16 +31,17 @@ xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
 
 Polecenie sprawdza kompilację aplikacji i frameworka dla symulatora. Testy transportu i demo uruchomisz poleceniem `:composeApp:testAndroidHostTest` z sekcji Android. Jeśli uruchamiasz aplikację na urządzeniu, wybierz swój zespół w ustawieniach podpisywania Xcode.
 
-### Konfiguracja i dostępność na iOS
+### Nawigacja i dostępność na iOS
 
 1. Uruchom schemat `iosApp` w konfiguracji Debug na symulatorze. Zostaw domyślny tryb `MOCK`.
-2. Wyślij pustą nazwę w konfiguracji lokalnej. Sprawdź komunikat przy polu. Wpisz fikcyjną nazwę i przejdź do Dzisiaj. Otwórz menu, przejdź do Historii i wróć do Dzisiaj.
-3. Sprawdź ten przebieg po zmianie języka symulatora na polski i angielski. Przy większym tekście w ustawieniach dostępności przewiń formularz i menu. Sprawdź, czy etykiety są czytelne i czy da się dosięgnąć głównych przycisków.
-4. Na iPhonie włącz VoiceOver w `Ustawienia → Dostępność → VoiceOver`. Przejdź przez formularz i menu gestami VoiceOver. Sprawdź kolejność fokusu, odczyt nazwy pola i błędu, nazwy akcji otwarcia i zamknięcia menu oraz powrót do Dzisiaj. W symulatorze możesz sprawdzić etykiety i role przez Accessibility Inspector. [Testowanie dostępności w aplikacji](https://developer.apple.com/documentation/accessibility/performing-accessibility-testing-for-your-app)
+2. Wybierz **Zacznij**, aby otworzyć Dzisiaj. Przejdź do kasetki główną akcją, otwórz Przygotowanie i wróć do Kasetki. Otwórz Historię dolną zakładką i wróć zakładką Dzisiaj.
+3. Z Dzisiaj otwórz Ustawienia i edycję profilu lokalnego. Spróbuj zapisać pustą nazwę i sprawdź komunikat przy polu. Wpisz fikcyjną nazwę i sprawdź wynik w Ustawieniach.
+4. Powtórz przebieg w polskiej i angielskiej wersji językowej symulatora. Zwiększ tekst w ustawieniach dostępności i sprawdź, czy główne przyciski oraz cztery zakładki pozostają dostępne.
+5. Na iPhonie włącz VoiceOver w `Ustawienia → Dostępność → VoiceOver`. Sprawdź kolejność fokusu na powitaniu, nazwy zakładek i odczyt wybranej zakładki, powrót z Przygotowania oraz odczyt nazwy pola i błędu w profilu. W symulatorze sprawdzisz etykiety i role przez Accessibility Inspector. [Testowanie dostępności w aplikacji](https://developer.apple.com/documentation/accessibility/performing-accessibility-testing-for-your-app)
 
 ## Tryby pracy
 
-Aplikacja domyślnie uruchamia się w `MOCK` ze scenariuszem `NORMAL`. Interfejs pokazuje aktywny tryb oraz nazwę scenariusza, jeśli wybrano inny niż domyślny. Konfiguracja nazwy i przejście do Dzisiaj korzystają z lokalnego stanu aplikacji. Warstwa transportu w `LIVE` udostępnia rejestrację i logowanie dla kolejnych funkcji. Leki, plan, przygotowanie i historia są dostępne w roboczym repozytorium `MOCK`. [Kontrakt API](docs/api-contract.md)
+Aplikacja domyślnie uruchamia się w `MOCK` ze scenariuszem `NORMAL`. Interfejs pokazuje aktywny tryb oraz nazwę scenariusza, jeśli wybrano inny niż domyślny. Przejście do Dzisiaj i opcjonalna edycja profilu korzystają z lokalnego stanu aplikacji. Warstwa transportu w `LIVE` udostępnia rejestrację i logowanie dla kolejnych funkcji. Leki, plan, przygotowanie i historia są dostępne w roboczym repozytorium `MOCK`. [Kontrakt API](docs/api-contract.md)
 
 Parametry startowe poniżej działają w konfiguracji `Debug`. W `LIVE` podaj sam origin, np. `https://api.example.com`. Repozytorium dodaje ścieżkę `/api`. Z lokalnym backendem połączysz się przez HTTP pod adresami z przykładów. Dla zdalnego backendu użyj HTTPS.
 

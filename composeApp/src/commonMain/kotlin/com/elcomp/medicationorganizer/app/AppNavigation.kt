@@ -2,12 +2,16 @@ package com.elcomp.medicationorganizer.app
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -26,217 +30,216 @@ import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.paneTitle
-import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.elcomp.medicationorganizer.core.network.ApiSettings
 import com.elcomp.medicationorganizer.core.network.MockScenario
+import com.elcomp.medicationorganizer.core.ui.AppActionButton
 import com.elcomp.medicationorganizer.core.ui.AppEmptyState
 import com.elcomp.medicationorganizer.core.ui.AppErrorState
 import com.elcomp.medicationorganizer.resources.*
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
-private enum class Destination(val slug: String, val title: StringResource) {
-    Setup("setup", Res.string.setup_title),
-    Today("today", Res.string.navigation_today),
-    Organizer("organizer", Res.string.navigation_organizer),
-    Medications("medications", Res.string.navigation_medications),
-    Preparation("preparation", Res.string.navigation_preparation),
-    History("history", Res.string.navigation_history),
-    Settings("settings", Res.string.navigation_settings),
-    Profile("profile", Res.string.profile_title),
+private enum class Destination(val tag: String, val title: StringResource, val tab: MainTab? = null) {
+    Welcome("welcome-screen", Res.string.welcome_title),
+    Today("screen-today", Res.string.navigation_today, MainTab.Today),
+    Organizer("screen-organizer", Res.string.navigation_organizer, MainTab.Organizer),
+    Medications("screen-medications", Res.string.navigation_medications, MainTab.Medications),
+    Preparation("screen-preparation", Res.string.navigation_preparation, MainTab.Organizer),
+    History("screen-history", Res.string.navigation_history, MainTab.History),
+    Settings("screen-settings", Res.string.navigation_settings, MainTab.Today),
+    Profile("profile-screen", Res.string.profile_title),
 }
 
-private val sections = listOf(
-    Destination.Today,
-    Destination.Organizer,
-    Destination.Medications,
-    Destination.Preparation,
-    Destination.History,
-    Destination.Settings,
-)
+private fun MainTab.destination(): Destination = when (this) {
+    MainTab.Today -> Destination.Today
+    MainTab.Organizer -> Destination.Organizer
+    MainTab.Medications -> Destination.Medications
+    MainTab.History -> Destination.History
+}
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 internal fun AppNavigation(settings: ApiSettings, invalidConfiguration: Boolean) {
-    var routeName by rememberSaveable { mutableStateOf(Destination.Setup.name) }
-    var menuOpen by rememberSaveable { mutableStateOf(false) }
+    var routeName by rememberSaveable { mutableStateOf(Destination.Welcome.name) }
     var displayName by rememberSaveable { mutableStateOf("") }
-    val route = Destination.entries.firstOrNull { it.name == routeName } ?: Destination.Setup
+    val route = Destination.entries.firstOrNull { it.name == routeName } ?: Destination.Welcome
 
     fun navigate(destination: Destination) {
         routeName = destination.name
-        menuOpen = false
     }
 
-    fun goBack() {
-        when {
-            menuOpen -> menuOpen = false
-            route == Destination.Profile -> navigate(Destination.Settings)
-            else -> navigate(Destination.Today)
-        }
+    val backDestination = when (route) {
+        Destination.Welcome, Destination.Today -> null
+        Destination.Preparation -> Destination.Organizer
+        Destination.Profile -> Destination.Settings
+        else -> Destination.Today
+    }
+    BackHandler(enabled = backDestination != null) {
+        backDestination?.let(::navigate)
     }
 
-    BackHandler(enabled = menuOpen || (route != Destination.Setup && route != Destination.Today)) {
-        goBack()
+    val tab = route.tab
+    val contentInsets = if (tab == null) {
+        WindowInsets.safeDrawing
+    } else {
+        WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
     }
 
     Surface(modifier = Modifier.fillMaxSize()) {
-        key(route, menuOpen) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .safeDrawingPadding()
-                    .imePadding()
-                    .testTag("navigation-scroll")
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                AppHeader(settings, invalidConfiguration)
-                if (menuOpen) {
-                    SectionMenu(route, onChoose = ::navigate, onClose = ::goBack)
-                } else {
-                    val title = stringResource(route.title)
-                    val screenTag = if (route == Destination.Setup || route == Destination.Profile) {
-                        route.slug + "-screen"
-                    } else {
-                        "screen-" + route.slug
-                    }
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag(screenTag)
-                            .semantics { paneTitle = title },
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        if (route in sections) {
-                            NavigationButton(stringResource(Res.string.navigation_open_menu), "navigation-open-menu") {
-                                menuOpen = true
-                            }
-                            if (route != Destination.Today) {
-                                NavigationButton(stringResource(Res.string.navigation_back_today), "navigation-today") {
-                                    navigate(Destination.Today)
-                                }
+        Column(modifier = Modifier.fillMaxSize()) {
+            key(route) {
+                val title = stringResource(route.title)
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .windowInsetsPadding(contentInsets)
+                        .imePadding()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 24.dp, vertical = 20.dp)
+                        .testTag(route.tag)
+                        .semantics { paneTitle = title },
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Text(
+                        title,
+                        modifier = Modifier.semantics { heading() },
+                        style = MaterialTheme.typography.headlineMedium,
+                    )
+                    ModeStatus(settings, invalidConfiguration)
+                    when (route) {
+                        Destination.Welcome -> WelcomeContent(onStart = { navigate(Destination.Today) })
+                        Destination.Today -> TodayContent(
+                            displayName = displayName,
+                            onOrganizer = { navigate(Destination.Organizer) },
+                            onSettings = { navigate(Destination.Settings) },
+                        )
+                        Destination.Organizer -> {
+                            Text(stringResource(Res.string.organizer_description), style = MaterialTheme.typography.bodyLarge)
+                            AppActionButton(
+                                text = stringResource(Res.string.organizer_open_preparation),
+                                onClick = { navigate(Destination.Preparation) },
+                                modifier = Modifier.fillMaxWidth().testTag("organizer-open-preparation"),
+                            )
+                        }
+                        Destination.Preparation -> {
+                            AppEmptyState(
+                                title = stringResource(Res.string.preparation_empty_title),
+                                message = stringResource(Res.string.preparation_empty_message),
+                            )
+                            SecondaryAction(
+                                Res.string.preparation_back_organizer,
+                                "preparation-back-organizer",
+                            ) { navigate(Destination.Organizer) }
+                        }
+                        Destination.Medications -> AppEmptyState(
+                            title = stringResource(Res.string.medications_empty_title),
+                            message = stringResource(Res.string.medications_empty_message),
+                        )
+                        Destination.History -> AppEmptyState(
+                            title = stringResource(Res.string.history_empty_title),
+                            message = stringResource(Res.string.history_empty_message),
+                        )
+                        Destination.Settings -> {
+                            Text(
+                                if (displayName.isBlank()) stringResource(Res.string.profile_name_missing)
+                                else stringResource(Res.string.profile_name_summary, displayName),
+                            )
+                            SecondaryAction(Res.string.navigation_open_profile, "navigation-open-profile") {
+                                navigate(Destination.Profile)
                             }
                         }
-
-                        NavigationTitle(title)
-                        when (route) {
-                            Destination.Setup, Destination.Profile -> {
-                                val editing = route == Destination.Profile
-                                LocalProfileForm(
-                                    initialName = displayName,
-                                    editing = editing,
-                                    onSave = { name ->
-                                        displayName = name
-                                        navigate(if (editing) Destination.Settings else Destination.Today)
-                                    },
-                                )
-                                if (editing) {
-                                    NavigationButton(
-                                        stringResource(Res.string.navigation_back_settings),
-                                        "navigation-back-settings",
-                                        onClick = ::goBack,
-                                    )
-                                }
+                        Destination.Profile -> {
+                            LocalProfileForm(initialName = displayName) { name ->
+                                displayName = name
+                                navigate(Destination.Settings)
                             }
-                            Destination.Settings -> {
-                                Text(stringResource(Res.string.profile_name_summary, displayName))
-                                NavigationButton(
-                                    stringResource(Res.string.navigation_open_profile),
-                                    "navigation-open-profile",
-                                ) {
-                                    navigate(Destination.Profile)
-                                }
+                            SecondaryAction(Res.string.navigation_back_settings, "navigation-back-settings") {
+                                navigate(Destination.Settings)
                             }
-                            else -> SectionContent(route, displayName)
                         }
                     }
                 }
+            }
+            if (tab != null) {
+                AppBottomNavigation(selected = tab, onSelect = { navigate(it.destination()) })
             }
         }
     }
 }
 
 @Composable
-private fun AppHeader(settings: ApiSettings, invalidConfiguration: Boolean) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(stringResource(Res.string.app_brand), style = MaterialTheme.typography.headlineSmall)
-        Text(stringResource(Res.string.app_product), style = MaterialTheme.typography.titleMedium)
-        Text(
-            stringResource(
-                if (settings is ApiSettings.Mock) Res.string.app_mode_mock else Res.string.app_mode_live,
-            ),
-        )
-        val scenarioLabel = when ((settings as? ApiSettings.Mock)?.scenario) {
-            MockScenario.EMPTY -> Res.string.app_scenario_empty
-            MockScenario.SLOW -> Res.string.app_scenario_slow
-            MockScenario.OFFLINE -> Res.string.app_scenario_offline
-            MockScenario.API_ERROR -> Res.string.app_scenario_api_error
-            MockScenario.NORMAL, null -> null
-        }
-        if (scenarioLabel != null) {
-            Text(stringResource(scenarioLabel))
-        }
-        if (invalidConfiguration) {
-            AppErrorState(message = stringResource(Res.string.app_configuration_warning))
-        }
-    }
+private fun WelcomeContent(onStart: () -> Unit) {
+    Text(stringResource(Res.string.welcome_description), style = MaterialTheme.typography.bodyLarge)
+    AppActionButton(
+        text = stringResource(Res.string.welcome_start),
+        onClick = onStart,
+        modifier = Modifier.fillMaxWidth().testTag("welcome-start"),
+    )
+    Text(stringResource(Res.string.app_data_note), style = MaterialTheme.typography.bodyMedium)
 }
 
 @Composable
-private fun SectionMenu(current: Destination, onChoose: (Destination) -> Unit, onClose: () -> Unit) {
-    val title = stringResource(Res.string.navigation_menu_title)
-    Column(
-        modifier = Modifier.fillMaxWidth().testTag("navigation-menu").semantics { paneTitle = title },
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+private fun TodayContent(displayName: String, onOrganizer: () -> Unit, onSettings: () -> Unit) {
+    if (displayName.isNotBlank()) {
+        Text(stringResource(Res.string.today_greeting, displayName), style = MaterialTheme.typography.titleLarge)
+    }
+    Text(stringResource(Res.string.today_description), style = MaterialTheme.typography.bodyLarge)
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = MaterialTheme.shapes.large,
     ) {
-        NavigationTitle(title)
-        NavigationButton(stringResource(Res.string.navigation_close_menu), "navigation-close-menu", onClick = onClose)
-        for (destination in sections) {
-            NavigationButton(
-                text = stringResource(destination.title),
-                tag = "navigation-" + destination.slug + "-destination",
-                current = destination == current,
-                onClick = { onChoose(destination) },
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                stringResource(Res.string.today_first_step_title),
+                modifier = Modifier.semantics { heading() },
+                style = MaterialTheme.typography.titleLarge,
+            )
+            Text(stringResource(Res.string.today_first_step_description), style = MaterialTheme.typography.bodyLarge)
+            AppActionButton(
+                text = stringResource(Res.string.today_open_organizer),
+                onClick = onOrganizer,
+                modifier = Modifier.fillMaxWidth().testTag("today-open-organizer"),
             )
         }
     }
+    SecondaryAction(Res.string.navigation_settings, "today-open-settings", onSettings)
 }
 
 @Composable
-private fun SectionContent(route: Destination, displayName: String) {
-    val emptyState = when (route) {
-        Destination.Today -> Res.string.today_empty_title to Res.string.today_empty_message
-        Destination.Organizer -> Res.string.organizer_empty_title to Res.string.organizer_empty_message
-        Destination.Medications -> Res.string.medications_empty_title to Res.string.medications_empty_message
-        Destination.Preparation -> Res.string.preparation_empty_title to Res.string.preparation_empty_message
-        Destination.History -> Res.string.history_empty_title to Res.string.history_empty_message
-        Destination.Setup, Destination.Settings, Destination.Profile -> return
+private fun ModeStatus(settings: ApiSettings, invalidConfiguration: Boolean) {
+    Text(
+        stringResource(if (settings is ApiSettings.Mock) Res.string.app_mode_mock else Res.string.app_mode_live),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    val scenarioLabel = when ((settings as? ApiSettings.Mock)?.scenario) {
+        MockScenario.EMPTY -> Res.string.app_scenario_empty
+        MockScenario.SLOW -> Res.string.app_scenario_slow
+        MockScenario.OFFLINE -> Res.string.app_scenario_offline
+        MockScenario.API_ERROR -> Res.string.app_scenario_api_error
+        MockScenario.NORMAL, null -> null
     }
-    if (route == Destination.Today) {
-        Text(stringResource(Res.string.today_greeting, displayName))
+    if (scenarioLabel != null) {
+        Text(stringResource(scenarioLabel), style = MaterialTheme.typography.labelLarge)
     }
-    AppEmptyState(title = stringResource(emptyState.first), message = stringResource(emptyState.second))
-    if (route == Destination.Today) {
-        Text(stringResource(Res.string.app_data_note))
+    if (invalidConfiguration) {
+        AppErrorState(message = stringResource(Res.string.app_configuration_warning))
     }
 }
 
 @Composable
-private fun NavigationTitle(title: String) {
-    Text(title, modifier = Modifier.semantics { heading() }, style = MaterialTheme.typography.headlineMedium)
-}
-
-@Composable
-private fun NavigationButton(text: String, tag: String, current: Boolean? = null, onClick: () -> Unit) {
-    val selection = if (current == null) Modifier else Modifier.semantics { selected = current }
+private fun SecondaryAction(text: StringResource, tag: String, onClick: () -> Unit) {
     OutlinedButton(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag(tag).then(selection),
+        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag(tag),
     ) {
-        Text(text)
+        Text(stringResource(text), style = MaterialTheme.typography.titleMedium)
     }
 }
