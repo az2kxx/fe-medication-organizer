@@ -1,6 +1,8 @@
 package com.elcomp.medicationorganizer.core.demo
 
 import com.elcomp.medicationorganizer.core.network.apiJson
+import com.elcomp.medicationorganizer.features.organizers.data.dto.OrganizerModelDetails
+import com.elcomp.medicationorganizer.features.organizers.data.dto.toSummary
 import io.ktor.client.engine.mock.MockRequestHandleScope
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.mock.toByteArray
@@ -36,7 +38,11 @@ internal class DemoRoutes(private val empty: Boolean = false) {
 
         return try {
             when ("${request.method.value} $route") {
-                "GET /api/organizer-models/{id}" -> json(state.organizerModel(id()))
+                "GET /api/organizer-models" -> json(
+                    (query["productCode"]?.let(DemoCatalog::findByProductCode) ?: DemoCatalog.models)
+                        .map(OrganizerModelDetails::toSummary),
+                )
+                "GET /api/organizer-models/{id}" -> json(DemoCatalog.model(id()) ?: missing("Unknown demo model"))
                 "GET /api/medications" -> json(state.medications())
                 "POST /api/medications" -> json(state.createMedication(request.decode()), HttpStatusCode.Created)
                 "PUT /api/medications/{id}/schedule" -> json(state.replaceSchedule(id(), request.decode()))
@@ -110,16 +116,15 @@ private class DemoState(empty: Boolean) {
     private val intake = mutableListOf<IntakeRecord>()
     private var preparation: Preparation? = null
 
-    private val model = OrganizerModel(
-        id = DEMO_MODEL_ID,
-        name = "Kasetka demonstracyjna",
-        compartments = (1..7).flatMap { day ->
-            listOf(TimeOfDay.MORNING, TimeOfDay.EVENING).mapIndexed { index, time ->
-                val position = (day - 1) * 2 + index
-                CompartmentDefinition(position.toLong() + 1, position, day, time)
-            }
-        },
-    )
+    private val model = DemoCatalog.demoModel.let { catalog ->
+        OrganizerModel(
+            id = catalog.id,
+            name = catalog.name,
+            compartments = catalog.compartments.map {
+                CompartmentDefinition(it.id, it.positionIndex, checkNotNull(it.dayOfWeek), checkNotNull(it.timeOfDay))
+            },
+        )
+    }
 
     init {
         if (!empty) {
@@ -130,8 +135,6 @@ private class DemoState(empty: Boolean) {
             )
         }
     }
-
-    fun organizerModel(id: Long): OrganizerModel = model.takeIf { it.id == id } ?: missing("Unknown demo model")
 
     fun medications(): List<Medication> = medications.values.map(StoredMedication::summary)
 

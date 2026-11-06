@@ -5,6 +5,7 @@ import com.elcomp.medicationorganizer.core.session.SessionManager
 import com.elcomp.medicationorganizer.core.session.SessionTokenStore
 import com.elcomp.medicationorganizer.features.auth.data.AuthRepository
 import com.elcomp.medicationorganizer.features.auth.data.dto.LoginRequest
+import com.elcomp.medicationorganizer.features.organizers.data.OrganizerCatalogRepository
 import com.elcomp.medicationorganizer.features.profile.data.DemoPreferencesStore
 import com.elcomp.medicationorganizer.features.profile.data.ProfileRepository
 import io.ktor.client.HttpClient
@@ -28,6 +29,7 @@ class AppServices private constructor(
     val auth = AuthRepository(api)
     val demo: DemoRepository? = demoSession?.let { DemoRepository(api) }
     val profile: ProfileRepository? = demoSession?.let { ProfileRepository(api) }
+    val organizers: OrganizerCatalogRepository? = demoSession?.let { OrganizerCatalogRepository(api) }
 
     suspend fun signIn(request: LoginRequest) {
         session.signIn { auth.login(request) }

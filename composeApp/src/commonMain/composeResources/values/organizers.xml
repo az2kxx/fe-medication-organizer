@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="organizer_choose_model">Wybierz model kasetki</string>
+    <string name="organizer_catalog_title">Model kasetki</string>
+    <string name="organizer_catalog_intro">Wybierz model z listy albo wpisz kod produktu z opakowania.</string>
+    <string name="organizer_catalog_live_unavailable">Katalog kasetek jest na razie dostępny w trybie demo.</string>
+    <string name="organizer_catalog_code_label">Kod produktu</string>
+    <string name="organizer_catalog_code_required">Wpisz kod produktu.</string>
+    <string name="organizer_catalog_search">Szukaj</string>
+    <string name="organizer_catalog_show_all">Pokaż wszystkie modele</string>
+    <string name="organizer_catalog_results">Wyniki dla kodu %1$s</string>
+    <string name="organizer_catalog_failed">Nie udało się wczytać katalogu kasetek.</string>
+    <string name="organizer_catalog_empty_title">Katalog jest pusty</string>
+    <string name="organizer_catalog_empty_message">Brak modeli kasetek do wyboru.</string>
+    <string name="organizer_search_empty_title">Nie znaleziono modelu</string>
+    <string name="organizer_search_empty_message">Brak modelu o kodzie %1$s. Sprawdź kod lub wybierz model z listy.</string>
+    <string name="organizer_product_code">Kod produktu: %1$s</string>
+    <string name="organizer_layout_summary">Dni: %1$d · Przegródki na dzień: %2$d</string>
+    <string name="organizer_compartment_count">Liczba przegródek: %1$d</string>
+    <string name="organizer_inactive">Model niedostępny do nowego przypisania</string>
+    <string name="organizer_details_failed">Nie udało się wczytać modelu kasetki.</string>
+    <string name="organizer_layout_title">Układ przegródek</string>
+    <string name="organizer_layout_empty">Ten model nie ma opisanych przegródek.</string>
+    <string name="organizer_layout_row">Przegródki</string>
+    <string name="organizer_select">Wybierz ten model</string>
+    <string name="organizer_back_catalog">Wróć do katalogu</string>
+    <string name="organizer_confirm_title">Potwierdź wybór kasetki</string>
+    <string name="organizer_confirm_message">Sprawdź, czy model zgadza się z kasetką, którą masz przed sobą.</string>
+    <string name="organizer_assign">Przypisz kasetkę</string>
+    <string name="organizer_assign_unavailable">Zapis przypisania do konta zostanie dodany w kolejnym etapie.</string>
+    <string name="organizer_assign_failed">Nie udało się przypisać kasetki. Spróbuj ponownie.</string>
+    <string name="organizer_change_model">Zmień model</string>
+
+    <string name="day_1">Poniedziałek</string>
+    <string name="day_2">Wtorek</string>
+    <string name="day_3">Środa</string>
+    <string name="day_4">Czwartek</string>
+    <string name="day_5">Piątek</string>
+    <string name="day_6">Sobota</string>
+    <string name="day_7">Niedziela</string>
+    <string name="time_of_day_morning">Rano</string>
+    <string name="time_of_day_noon">Południe</string>
+    <string name="time_of_day_evening">Wieczór</string>
+    <string name="time_of_day_night">Noc</string>
+    <string name="time_of_day_other">Inna pora</string>
+</resources>

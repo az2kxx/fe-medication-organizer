@@ -85,7 +85,7 @@ Warstwa transportu zgłasza `ApiException` z kategorią `error`, lokalnym komuni
 
 Projekt zakłada publiczny odczyt katalogu oraz uwierzytelnienie i kontrolę dostępu do pozostałych zasobów. Obecny backend udostępnia m.in. `GET /api/users/{id}` i `PATCH /api/users/change-display-name`. Odczyt przez ID jest dostępny dla uwierzytelnionych użytkowników niezależnie od właściciela profilu. Zmiana nazwy wymaga bieżącego hasła. Docelowe trasy profilu i preferencji poniżej pozostają do uzgodnienia przed integracją `LIVE`. [Kontroler użytkowników](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/users/UserController.java#L51-L81) · [Odczyt przez ID](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/users/UserService.java#L44-L50)
 
-`services.profile` udostępnia profil i preferencje. `services.demo` udostępnia odczyt modelu kasetki po ID, listę i dodawanie leków, zastąpienie harmonogramu, plan dnia i tygodnia, przygotowanie kasetki oraz zapis i odczyt deklaracji przyjęcia. Tabela obejmuje także trasy planowane dla kolejnych zadań. [Repozytorium profilu](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/features/profile/data/ProfileRepository.kt) · [Repozytorium demo](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/core/demo/DemoRepository.kt)
+`services.profile` udostępnia profil i preferencje. `services.organizers` udostępnia katalog modeli kasetek. `services.demo` udostępnia odczyt modelu kasetki po ID, listę i dodawanie leków, zastąpienie harmonogramu, plan dnia i tygodnia, przygotowanie kasetki oraz zapis i odczyt deklaracji przyjęcia. Tabela obejmuje także trasy planowane dla kolejnych zadań. [Repozytorium profilu](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/features/profile/data/ProfileRepository.kt) · [Repozytorium katalogu](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/features/organizers/data/OrganizerCatalogRepository.kt) · [Repozytorium demo](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/core/demo/DemoRepository.kt)
 
 | Metoda | Trasa | Zastosowanie |
 | --- | --- | --- |
@@ -127,6 +127,26 @@ Obie trasy wymagają `Authorization: Bearer <token>` i operują na bieżącym ko
 `GET /api/users/me/preferences` zwraca `200` i bieżący zestaw preferencji. `PUT` przyjmuje i zwraca pełny zestaw. Domyślne wartości w `MOCK` to `{"simplifiedMode":false,"textScale":100,"highContrast":false}`. `textScale` to procent wyrażony liczbą całkowitą od 100 do 200. Język, strefa czasowa, dźwięk i wibracja pozostają ustawieniami lokalnymi lub systemowymi.
 
 W `MOCK` nieprawidłowa nazwa lub zestaw preferencji daje `400`, brak ważnej sesji daje `401`, a niedostępny magazyn preferencji daje `503`. [Implementacja tras demo](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/core/network/DemoSession.kt)
+
+### Roboczy katalog modeli kasetek w MOCK
+
+Backend nie ma jeszcze tras katalogu. Projekt backendu określa trasy, pola modelu i publiczny odczyt. Kształt odpowiedzi poniżej to założenie frontendu do potwierdzenia przed integracją `LIVE`. Do tego czasu repozytorium katalogu jest dostępne tylko w `MOCK`. [Projekt modelu kasetki](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/docs/design.md#organizermodel) · [FE-07](https://github.com/az2kxx/fe-medication-organizer/issues/7)
+
+Wszystkie trzy odczyty są publiczne. Klient nie wysyła `Authorization` nawet przy aktywnej sesji.
+
+| Trasa | Założona odpowiedź `200` |
+| --- | --- |
+| `GET /api/organizer-models` | Tablica modeli bez przegródek. Zawiera też modele nieaktywne. |
+| `GET /api/organizer-models?productCode=...` | Ta sama tablica zawężona do kodu. Nieznany kod daje pustą tablicę, a nie `404`. |
+| `GET /api/organizer-models/{id}` | Jeden model z tablicą `compartments`. Nieznane ID daje `404`. |
+
+Model ma pola `id` (`Long`), `productCode`, `name`, `active` oraz opcjonalne `description`, `daysCovered` i `compartmentsPerDay`. Przegródka ma pola `id` (`Long`), `positionIndex`, `label` oraz opcjonalne `dayOfWeek` (1–7 od poniedziałku) i `timeOfDay` (`MORNING`, `NOON`, `EVENING`, `NIGHT`, `OTHER`). Klient pomija pozostałe pola, np. `qrCodeValue` i `createdAt`. [Fixture listy](../composeApp/src/androidHostTest/resources/fixtures/organizers/organizer-models-response.json) · [Fixture modelu](../composeApp/src/androidHostTest/resources/fixtures/organizers/organizer-model-daily-response.json)
+
+Układ kasetki wynika z przegródek posortowanych według `positionIndex`. Rząd ma `compartmentsPerDay` przegródek. Bez tej wartości rząd tworzą kolejne przegródki z tym samym `dayOfWeek`. Interfejs pokazuje model nieaktywny, ale nie pozwala go wybrać do nowego przypisania. [Układ przegródek](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/features/organizers/domain/OrganizerLayout.kt)
+
+Klient usuwa białe znaki z końców kodu i koduje go w całości w zapytaniu. `MOCK` porównuje kod bez rozróżniania wielkości liter. Katalog demo ma model 7×2 używany przez plan i przygotowanie, model 7×3 (`ELC-7X3`), model dzienny 1×4 bez dni tygodnia i nieaktywny model 7×1. Scenariusz `EMPTY` zachowuje katalog. [Katalog demo](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/core/demo/DemoCatalog.kt)
+
+Katalog nie ma instrukcji produktu ani zdjęć modeli. Projekt backendu nie przewiduje dla nich pól ani tras.
 
 ## Robocze przykłady dla mocków
 
@@ -240,7 +260,8 @@ Odpowiedź `200 OK`
 
 ## Do uzgodnienia z backendem
 
-- Pełne odpowiedzi katalogu, profilu, preferencji, przypisania kasetki, planu dnia i tygodnia, historii oraz sesji przygotowania. Potrzebujemy także formatu pustych list, wyniku wyszukiwania QR i odpowiedzi przy braku bieżącej sesji.
+- Kształt odpowiedzi katalogu z sekcji o katalogu: lista bez przegródek, pusta tablica dla nieznanego kodu, obecność modeli nieaktywnych na liście i porównanie kodu bez rozróżniania wielkości liter.
+- Pełne odpowiedzi profilu, preferencji, przypisania kasetki, planu dnia i tygodnia, historii oraz sesji przygotowania. Potrzebujemy także formatu pustych list, wyniku wyszukiwania QR i odpowiedzi przy braku bieżącej sesji.
 - Dozwolone pola mutacji bez przykładów, w tym `form` przy dodawaniu leku. W modelu danych jest `form`, a skrócone żądanie nie pokazuje tego pola. Trzeba potwierdzić wymagane i opcjonalne pola, dopuszczalne wartości `timeOfDay` oraz numerację dni tygodnia.
 - Reguły przypisania dawek do kasetki i przegródki oraz kształt odpowiedzi dla dawki bez przypisanej przegródki. Plan powinien przekazywać dane potrzebne kreatorowi i widokowi kasetki.
 - Reguła nadawania `MISSED`, zachowanie lokalnego czasu w razie zmiany strefy lub przejścia na czas letni i zimowy oraz obsługa ponownego zgłoszenia lub korekty intake.

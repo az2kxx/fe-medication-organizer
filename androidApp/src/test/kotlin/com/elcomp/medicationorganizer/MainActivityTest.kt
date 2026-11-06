@@ -235,6 +235,69 @@ class MainActivityTest {
     }
 
     @Test
+    fun organizerCatalogSearchesByCodeShowsLayoutAndBlocksInactiveModel() {
+        startFromWelcome()
+        composeRule.onNodeWithTag("tab-organizer").performClick()
+        composeRule.onNodeWithTag("organizer-open-catalog").performScrollTo().performClick()
+        assertEventuallyDisplayed(hasTestTag("screen-organizer-catalog"))
+        waitForNode(hasTestTag("organizer-model-4"))
+
+        composeRule.onNodeWithTag("organizer-search").performScrollTo().performClick()
+        composeRule.onNodeWithText("Wpisz kod produktu.").assertExists()
+
+        replaceField("organizer-code", "BRAK-123")
+        composeRule.onNodeWithTag("organizer-search").performScrollTo().performClick()
+        waitForNode(hasTestTag("organizer-search-empty"))
+        composeRule.onNodeWithText("Brak modelu o kodzie BRAK-123", substring = true).assertExists()
+
+        replaceField("organizer-code", " elc-7x3 ")
+        composeRule.onNodeWithTag("organizer-search").performScrollTo().performClick()
+        waitForNode(hasTestTag("organizer-model-2"))
+        composeRule.onNodeWithTag("organizer-model-1").assertDoesNotExist()
+        composeRule.onNodeWithTag("organizer-model-2").performScrollTo().performClick()
+
+        waitForNode(hasTestTag("organizer-details"))
+        composeRule.onNodeWithText("Kasetka tygodniowa 7×3").assertExists()
+        composeRule.onAllNodes(hasTestTag("organizer-layout-row")).assertCountEquals(7)
+        composeRule.onNodeWithTag("organizer-compartment-102")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf("Poniedziałek, Południe")))
+        composeRule.onNodeWithTag("organizer-select").performScrollTo().assertIsEnabled().performClick()
+        composeRule.onNodeWithTag("organizer-confirm").assertExists()
+        composeRule.onNodeWithTag("organizer-assign-unavailable").performScrollTo().assertIsDisplayed()
+
+        pressSystemBack()
+        composeRule.onNodeWithTag("organizer-details").assertExists()
+        pressSystemBack()
+        waitForNode(hasTestTag("organizer-model-2"))
+        composeRule.onNodeWithTag("organizer-show-all").performScrollTo().performClick()
+        waitForNode(hasTestTag("organizer-model-4"))
+        composeRule.onNodeWithTag("organizer-model-4").performScrollTo().performClick()
+
+        waitForNode(hasTestTag("organizer-details"))
+        composeRule.onNodeWithTag("organizer-inactive").assertExists()
+        composeRule.onNodeWithTag("organizer-select").performScrollTo().assertIsNotEnabled()
+
+        pressSystemBack()
+        waitForNode(hasTestTag("organizer-model-4"))
+        pressSystemBack()
+        composeRule.onNodeWithTag("screen-organizer").assertIsDisplayed()
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w360dp-h640dp")
+    fun organizerCatalogUsesEnglishDayAndTimeNames() {
+        startFromWelcome()
+        composeRule.onNodeWithTag("tab-organizer").performClick()
+        composeRule.onNodeWithTag("organizer-open-catalog").performScrollTo().performClick()
+        waitForNode(hasTestTag("organizer-model-3"))
+        composeRule.onNodeWithTag("organizer-model-3").performScrollTo().performClick()
+        waitForNode(hasTestTag("organizer-details"))
+        composeRule.onNodeWithText("Compartment layout").assertExists()
+        composeRule.onNodeWithTag("organizer-compartment-204")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf("Night")))
+    }
+
+    @Test
     fun bottomTabsOpenSectionsDirectlyAndExposeSelection() {
         startFromWelcome()
         composeRule.onNodeWithTag("tab-today").assertIsSelected()

@@ -16,7 +16,7 @@ Otwórz katalog repozytorium w Android Studio, ustaw JDK 21 jako Gradle JDK i ws
 ./gradlew :androidApp:assembleDebug :androidApp:testDebugUnitTest :composeApp:testAndroidHostTest
 ```
 
-APK pojawi się w `androidApp/build/outputs/apk/debug/`. Testy `androidApp` obejmują rejestrację i logowanie w demo, walidację profilu, izolację kont po wylogowaniu oraz odtworzenie preferencji demo po ponownym utworzeniu aktywności. Sprawdzają też nawigację w PL i EN oraz dostęp do kontrolek przy skali systemowej 200%. Testy hosta w `composeApp` sprawdzają kontrakt auth, sesję, transport oraz przebieg demo.
+APK pojawi się w `androidApp/build/outputs/apk/debug/`. Testy `androidApp` obejmują rejestrację i logowanie w demo, walidację profilu, izolację kont po wylogowaniu oraz odtworzenie preferencji demo po ponownym utworzeniu aktywności. Sprawdzają też wyszukiwanie modelu kasetki po kodzie, układ przegródek i blokadę wyboru modelu nieaktywnego, nawigację w PL i EN oraz dostęp do kontrolek przy skali systemowej 200%. Testy hosta w `composeApp` sprawdzają kontrakt auth, sesję, transport oraz przebieg demo.
 
 ## iOS
 
