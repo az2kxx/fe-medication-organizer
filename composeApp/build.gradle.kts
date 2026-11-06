@@ -16,6 +16,10 @@ kotlin {
         compileSdk = 36
         minSdk = 24
 
+        androidResources {
+            enable = true
+        }
+
         withHostTestBuilder {}
 
         compilerOptions {
@@ -35,6 +39,8 @@ kotlin {
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
             implementation(libs.compose.ui)
+            implementation(libs.compose.backhandler)
+            implementation(libs.compose.resources)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.io.core)
@@ -53,4 +59,8 @@ kotlin {
             implementation(kotlin("test-junit"))
         }
     }
+}
+
+compose.resources {
+    packageOfResClass = "com.elcomp.medicationorganizer.resources"
 }
