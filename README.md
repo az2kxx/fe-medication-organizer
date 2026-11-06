@@ -13,10 +13,10 @@ Mobilny frontend kasetki EL COMP. Android i iOS uruchamiają ten sam ekran start
 Otwórz katalog repozytorium w Android Studio, ustaw JDK 21 jako Gradle JDK i wskaż lokalny Android SDK. Uruchom konfigurację `androidApp` na emulatorze lub urządzeniu. W terminalu ustaw `JAVA_HOME` na JDK 21 i `ANDROID_HOME` na katalog Android SDK.
 
 ```sh
-./gradlew :androidApp:assembleDebug :androidApp:testDebugUnitTest
+./gradlew :androidApp:assembleDebug :androidApp:testDebugUnitTest :composeApp:testAndroidHostTest
 ```
 
-APK pojawi się w `androidApp/build/outputs/apk/debug/`. Test uruchamia aktywność Androida i sprawdza, czy wyświetliła wspólny ekran Compose.
+APK pojawi się w `androidApp/build/outputs/apk/debug/`. Test startowy sprawdza wspólny ekran Compose. Testy `composeApp` odczytują przykładowe żądania i odpowiedzi logowania oraz rejestracji.
 
 ## iOS
 
