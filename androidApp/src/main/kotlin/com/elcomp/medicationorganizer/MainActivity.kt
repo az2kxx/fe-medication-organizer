@@ -10,6 +10,7 @@ import com.elcomp.medicationorganizer.app.AppLaunchConfig
 import com.elcomp.medicationorganizer.app.resolveAppLaunchConfig
 import com.elcomp.medicationorganizer.core.network.ApiSettings
 import com.elcomp.medicationorganizer.core.session.AndroidSessionTokenStore
+import com.elcomp.medicationorganizer.features.profile.data.AndroidDemoPreferencesStore
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,7 +30,12 @@ class MainActivity : ComponentActivity() {
         } else {
             null
         }
-        setContent { App(launchConfig, sessionStore) }
+        val demoPreferencesStore = if (launchConfig.settings is ApiSettings.Mock) {
+            AndroidDemoPreferencesStore(applicationContext)
+        } else {
+            null
+        }
+        setContent { App(launchConfig, sessionStore, demoPreferencesStore) }
     }
 }
 

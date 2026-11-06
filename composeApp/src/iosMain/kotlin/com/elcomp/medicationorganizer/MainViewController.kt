@@ -5,6 +5,7 @@ import com.elcomp.medicationorganizer.app.App
 import com.elcomp.medicationorganizer.app.resolveAppLaunchConfig
 import com.elcomp.medicationorganizer.core.network.ApiSettings
 import com.elcomp.medicationorganizer.core.session.KeychainSessionTokenStore
+import com.elcomp.medicationorganizer.features.profile.data.IosDemoPreferencesStore
 import platform.UIKit.UIViewController
 
 fun MainViewController(
@@ -18,5 +19,10 @@ fun MainViewController(
     } else {
         null
     }
-    return ComposeUIViewController { App(launchConfig, sessionStore) }
+    val demoPreferencesStore = if (launchConfig.settings is ApiSettings.Mock) {
+        IosDemoPreferencesStore()
+    } else {
+        null
+    }
+    return ComposeUIViewController { App(launchConfig, sessionStore, demoPreferencesStore) }
 }

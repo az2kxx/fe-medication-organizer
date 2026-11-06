@@ -8,14 +8,14 @@ Oba tryby używają tych samych DTO rejestracji i logowania. Tryb, scenariusz de
 
 | Tryb docelowy | Skąd pochodzą dane |
 | --- | --- |
-| `MOCK` | Lokalny transport obsługuje rejestrację i logowanie z fikcyjnymi danymi. Robocze repozytorium demo aktualizuje plan po zmianie leku lub harmonogramu, a następnie udostępnia stan przygotowania i historię przyjęcia dawek. |
+| `MOCK` | Lokalny transport obsługuje rejestrację i logowanie z fikcyjnymi danymi, profil i preferencje bieżącego konta oraz robocze operacje planu, leków, przygotowania i historii. |
 | `LIVE` | Repozytorium wysyła rejestrację i logowanie do skonfigurowanego backendu. Dla kolejnych tras najpierw potwierdzamy kontrakt w kodzie i zachowanie odpowiedzi. |
 
 ## Potwierdzony kontrakt rejestracji i logowania
 
 Bazowa ścieżka to `/api`. Backend zezwala na żądania do `/api/auth/**` bez sesji. Pozostałe żądania wymagają uwierzytelnienia przez `Authorization: Bearer <token>`. [Konfiguracja zabezpieczeń](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/config/SecurityConfig.java#L40-L51)
 
-W `MOCK` publiczne są logowanie, rejestracja i odczyt modelu kasetki. Robocze trasy leków, planu, przygotowania i deklaracji przyjęcia wymagają ważnej sesji demo. Klient używa odpowiedzi `401` z chronionej trasy jako sygnału do zakończenia sesji. [Obsługa sesji](architecture.md#obsługa-sesji)
+W `MOCK` publiczne są logowanie, rejestracja i odczyt modelu kasetki. Robocze trasy profilu, preferencji, leków, planu, przygotowania i deklaracji przyjęcia wymagają ważnej sesji demo. Klient używa odpowiedzi `401` z chronionej trasy jako sygnału do zakończenia sesji. [Obsługa sesji](architecture.md#obsługa-sesji)
 
 ### Rejestracja `POST /api/auth/register`
 
@@ -85,7 +85,7 @@ Warstwa transportu zgłasza `ApiException` z kategorią `error`, lokalnym komuni
 
 Projekt zakłada publiczny odczyt katalogu oraz uwierzytelnienie i kontrolę dostępu do pozostałych zasobów. Obecny backend udostępnia m.in. `GET /api/users/{id}` i `PATCH /api/users/change-display-name`. Odczyt przez ID jest dostępny dla uwierzytelnionych użytkowników niezależnie od właściciela profilu. Zmiana nazwy wymaga bieżącego hasła. Docelowe trasy profilu i preferencji poniżej pozostają do uzgodnienia przed integracją `LIVE`. [Kontroler użytkowników](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/users/UserController.java#L51-L81) · [Odczyt przez ID](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/users/UserService.java#L44-L50)
 
-`services.demo` udostępnia odczyt modelu kasetki po ID, listę i dodawanie leków, zastąpienie harmonogramu, plan dnia i tygodnia, przygotowanie kasetki oraz zapis i odczyt deklaracji przyjęcia. Tabela obejmuje także trasy planowane dla kolejnych zadań. [Repozytorium demo](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/core/demo/DemoRepository.kt)
+`services.profile` udostępnia profil i preferencje. `services.demo` udostępnia odczyt modelu kasetki po ID, listę i dodawanie leków, zastąpienie harmonogramu, plan dnia i tygodnia, przygotowanie kasetki oraz zapis i odczyt deklaracji przyjęcia. Tabela obejmuje także trasy planowane dla kolejnych zadań. [Repozytorium profilu](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/features/profile/data/ProfileRepository.kt) · [Repozytorium demo](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/core/demo/DemoRepository.kt)
 
 | Metoda | Trasa | Zastosowanie |
 | --- | --- | --- |
@@ -112,11 +112,21 @@ Projekt zakłada publiczny odczyt katalogu oraz uwierzytelnienie i kontrolę dos
 
 `organizerId` w planie i `{id}` w trasach `/api/users/me/organizers/{id}/…` oznaczają identyfikator przypisania `UserOrganizer`. `compartmentId` w trasie aktualizacji oznacza `CompartmentDefinition.id`. Układ cyfrowej kasetki wynika z definicji przegródek i ich `positionIndex`.
 
-Projekt zakłada JSON. Daty i godziny harmonogramu to wartości lokalne, np. `2026-10-30` i `08:00`. Czas zdarzenia to znacznik ISO 8601, np. `2026-10-30T08:05:00Z`. Ilość dawki i moc leku to liczby dziesiętne. DTO musi zachować ich precyzję. Projektowane preferencje to `simplifiedMode`, `textScale` i `highContrast`. Strefę czasową i ustawienia powiadomień obsługuje klient. Powiadomienia i ich odkładanie działają lokalnie w MVP.
+Projekt zakłada JSON. Daty i godziny harmonogramu to wartości lokalne, np. `2026-10-30` i `08:00`. Czas zdarzenia to znacznik ISO 8601, np. `2026-10-30T08:05:00Z`. Ilość dawki i moc leku to liczby dziesiętne. DTO musi zachować ich precyzję. Strefę czasową i ustawienia powiadomień obsługuje klient. Powiadomienia i ich odkładanie działają lokalnie w MVP.
 
 W demo `days` używa numeracji 1–7 od poniedziałku, a `times` zawiera obiekty z polami `time` i opcjonalnym `timeOfDay`. Ilość i moc przechodzą przez liczbowe `JsonPrimitive`, dzięki czemu zachowują precyzję zapisu dziesiętnego.
 
 Projekt przewiduje `201` dla tworzenia, `200` dla odczytu i aktualizacji oraz `204` dla odpowiedzi bez treści. Konkretne statusy i payloady potwierdzimy dla każdej wdrożonej trasy.
+
+### Roboczy profil i preferencje w MOCK
+
+Obie trasy wymagają `Authorization: Bearer <token>` i operują na bieżącym koncie. W `LIVE` repozytorium profilu pozostaje niedostępne do czasu potwierdzenia kontraktu.
+
+`GET /api/users/me` zwraca `200` z polami `id` (`Long`), `email` (`String`) i `displayName` (`String?`). `PATCH /api/users/me` przyjmuje `{"displayName":"Alex"}` i zwraca ten sam format. Nazwa po usunięciu białych znaków na końcach ma od 1 do 32 znaków. E-mail pozostaje polem odczytu.
+
+`GET /api/users/me/preferences` zwraca `200` i bieżący zestaw preferencji. `PUT` przyjmuje i zwraca pełny zestaw. Domyślne wartości w `MOCK` to `{"simplifiedMode":false,"textScale":100,"highContrast":false}`. `textScale` to procent wyrażony liczbą całkowitą od 100 do 200. Język, strefa czasowa, dźwięk i wibracja pozostają ustawieniami lokalnymi lub systemowymi.
+
+W `MOCK` nieprawidłowa nazwa lub zestaw preferencji daje `400`, brak ważnej sesji daje `401`, a niedostępny magazyn preferencji daje `503`. [Implementacja tras demo](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/core/network/DemoSession.kt)
 
 ## Robocze przykłady dla mocków
 

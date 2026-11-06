@@ -19,7 +19,7 @@
     <string name="navigation_history">Historia</string>
     <string name="navigation_preparation">Przygotowanie</string>
     <string name="navigation_settings">Ustawienia</string>
-    <string name="navigation_open_profile">Edytuj profil lokalny</string>
+    <string name="navigation_open_profile">Edytuj profil</string>
     <string name="navigation_back_settings">Wróć do ustawień</string>
 
     <string name="today_greeting">Witaj, %1$s</string>
@@ -38,8 +38,7 @@
     <string name="history_empty_title">Brak potwierdzeń</string>
     <string name="history_empty_message">Tutaj zobaczysz potwierdzenia przyjęcia lub pominięcia dawek.</string>
 
-    <string name="profile_title">Profil lokalny</string>
-    <string name="profile_local_description">Wybierz nazwę widoczną w aplikacji podczas tej sesji.</string>
+    <string name="profile_title">Profil</string>
     <string name="profile_name_label">Nazwa wyświetlana</string>
     <string name="profile_name_required">Wpisz nazwę wyświetlaną.</string>
     <string name="profile_name_too_long">Nazwa może mieć najwyżej 32 znaki.</string>

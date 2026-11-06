@@ -58,7 +58,7 @@ internal enum class MainTab(
 
 /** Place in a separate bottom slot. This component applies horizontal and bottom safe drawing insets. */
 @Composable
-internal fun AppBottomNavigation(selected: MainTab, onSelect: (MainTab) -> Unit) {
+internal fun AppBottomNavigation(selected: MainTab, textScale: Int, onSelect: (MainTab) -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         tonalElevation = 3.dp,
@@ -70,7 +70,7 @@ internal fun AppBottomNavigation(selected: MainTab, onSelect: (MainTab) -> Unit)
                 .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom))
                 .padding(horizontal = 8.dp, vertical = 4.dp),
         ) {
-            val fontScale = LocalDensity.current.fontScale
+            val fontScale = LocalDensity.current.fontScale * (textScale / 100f)
             val columns = if (maxWidth / fontScale < 320.dp) 2 else 4
 
             Column(

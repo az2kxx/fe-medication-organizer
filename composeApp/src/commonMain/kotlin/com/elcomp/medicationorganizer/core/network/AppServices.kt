@@ -5,6 +5,8 @@ import com.elcomp.medicationorganizer.core.session.SessionManager
 import com.elcomp.medicationorganizer.core.session.SessionTokenStore
 import com.elcomp.medicationorganizer.features.auth.data.AuthRepository
 import com.elcomp.medicationorganizer.features.auth.data.dto.LoginRequest
+import com.elcomp.medicationorganizer.features.profile.data.DemoPreferencesStore
+import com.elcomp.medicationorganizer.features.profile.data.ProfileRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.engine.mock.MockEngine
@@ -25,6 +27,7 @@ class AppServices private constructor(
 
     val auth = AuthRepository(api)
     val demo: DemoRepository? = demoSession?.let { DemoRepository(api) }
+    val profile: ProfileRepository? = demoSession?.let { ProfileRepository(api) }
 
     suspend fun signIn(request: LoginRequest) {
         session.signIn { auth.login(request) }
@@ -47,15 +50,17 @@ class AppServices private constructor(
         fun create(
             settings: ApiSettings = ApiSettings.Mock(),
             sessionStore: SessionTokenStore? = null,
-        ): AppServices = create(settings, sessionStore, Clock.System)
+            demoPreferencesStore: DemoPreferencesStore? = null,
+        ): AppServices = create(settings, sessionStore, Clock.System, demoPreferencesStore)
 
         internal fun create(
             settings: ApiSettings,
             sessionStore: SessionTokenStore?,
             clock: Clock,
+            demoPreferencesStore: DemoPreferencesStore? = null,
         ): AppServices = when (settings) {
             is ApiSettings.Mock -> {
-                val demo = DemoSession(settings.scenario, clock)
+                val demo = DemoSession(settings.scenario, clock, demoPreferencesStore)
                 val client = HttpClient(MockEngine) {
                     configureApiClient()
                     engine {
