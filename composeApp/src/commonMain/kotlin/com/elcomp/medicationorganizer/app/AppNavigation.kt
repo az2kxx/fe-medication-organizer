@@ -42,6 +42,8 @@ import com.elcomp.medicationorganizer.core.ui.AppEmptyState
 import com.elcomp.medicationorganizer.core.ui.AppErrorState
 import com.elcomp.medicationorganizer.core.ui.AppLoadingState
 import com.elcomp.medicationorganizer.core.ui.AppSubmitButton
+import com.elcomp.medicationorganizer.features.organizers.data.OrganizerCatalogRepository
+import com.elcomp.medicationorganizer.features.organizers.presentation.OrganizerCatalogFlow
 import com.elcomp.medicationorganizer.features.profile.data.AccessibilityPreferences
 import com.elcomp.medicationorganizer.features.profile.presentation.AccessibilitySettings
 import com.elcomp.medicationorganizer.features.profile.presentation.AccountUiState
@@ -53,6 +55,7 @@ import org.jetbrains.compose.resources.stringResource
 private enum class Destination(val tag: String, val title: StringResource, val tab: MainTab? = null) {
     Today("screen-today", Res.string.navigation_today, MainTab.Today),
     Organizer("screen-organizer", Res.string.navigation_organizer, MainTab.Organizer),
+    OrganizerCatalog("screen-organizer-catalog", Res.string.organizer_catalog_title, MainTab.Organizer),
     Medications("screen-medications", Res.string.navigation_medications, MainTab.Medications),
     Preparation("screen-preparation", Res.string.navigation_preparation, MainTab.Organizer),
     History("screen-history", Res.string.navigation_history, MainTab.History),
@@ -74,6 +77,7 @@ internal fun AppNavigation(
     invalidConfiguration: Boolean,
     account: AccountUiState,
     demo: DemoRepository?,
+    organizers: OrganizerCatalogRepository?,
     onRetry: () -> Unit,
     onSaveDisplayName: suspend (String) -> Unit,
     onSavePreferences: suspend (AccessibilityPreferences) -> Unit,
@@ -90,7 +94,7 @@ internal fun AppNavigation(
 
     val backDestination = when (route) {
         Destination.Today -> null
-        Destination.Preparation -> Destination.Organizer
+        Destination.Preparation, Destination.OrganizerCatalog -> Destination.Organizer
         Destination.Profile -> Destination.Settings
         else -> Destination.Today
     }
@@ -141,10 +145,21 @@ internal fun AppNavigation(
                         }
                         Destination.Organizer -> {
                             Text(stringResource(Res.string.organizer_description), style = MaterialTheme.typography.bodyLarge)
+                            SecondaryAction(Res.string.organizer_choose_model, "organizer-open-catalog") {
+                                navigate(Destination.OrganizerCatalog)
+                            }
                             AppActionButton(
                                 text = stringResource(Res.string.organizer_open_preparation),
                                 onClick = { navigate(Destination.Preparation) },
                                 modifier = Modifier.fillMaxWidth().testTag("organizer-open-preparation"),
+                            )
+                        }
+                        Destination.OrganizerCatalog -> if (organizers != null) {
+                            OrganizerCatalogFlow(organizers)
+                        } else {
+                            Text(
+                                stringResource(Res.string.organizer_catalog_live_unavailable),
+                                style = MaterialTheme.typography.bodyLarge,
                             )
                         }
                         Destination.Preparation -> {

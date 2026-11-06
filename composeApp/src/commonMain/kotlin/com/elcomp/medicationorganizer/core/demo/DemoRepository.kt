@@ -1,6 +1,7 @@
 package com.elcomp.medicationorganizer.core.demo
 
 import com.elcomp.medicationorganizer.core.network.ApiClient
+import com.elcomp.medicationorganizer.features.organizers.data.dto.OrganizerModelDetails
 import io.ktor.http.encodeURLQueryComponent
 import kotlin.time.Instant
 import kotlinx.serialization.Serializable
@@ -12,7 +13,8 @@ const val DEMO_MODEL_ID = 1L
 
 /** Provisional demo payloads and routes. AppServices exposes this repository only in MOCK. */
 class DemoRepository internal constructor(private val api: ApiClient) {
-    suspend fun organizerModel(modelId: Long = DEMO_MODEL_ID): OrganizerModel =
+    /** Same public catalog route and DTO as OrganizerCatalogRepository.model. */
+    suspend fun organizerModel(modelId: Long = DEMO_MODEL_ID): OrganizerModelDetails =
         api.get("/api/organizer-models/$modelId")
 
     suspend fun medications(): List<Medication> = api.get("/api/medications", requiresSession = true)
@@ -63,17 +65,6 @@ class DemoRepository internal constructor(private val api: ApiClient) {
             requiresSession = true,
         )
 }
-
-@Serializable
-data class OrganizerModel(val id: Long, val name: String, val compartments: List<CompartmentDefinition>)
-
-@Serializable
-data class CompartmentDefinition(
-    val id: Long,
-    val positionIndex: Int,
-    val dayOfWeek: Int,
-    val timeOfDay: TimeOfDay,
-)
 
 @Serializable
 data class CreateMedication(

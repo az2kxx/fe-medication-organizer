@@ -1,0 +1,22 @@
+[
+  {
+    "id": 2,
+    "productCode": "ELC-7X3",
+    "name": "Kasetka tygodniowa 7×3",
+    "description": "Siedem dni, po trzy przegródki: rano, w południe i wieczorem.",
+    "daysCovered": 7,
+    "compartmentsPerDay": 3,
+    "active": true,
+    "createdAt": "2026-10-30T08:00:00Z"
+  },
+  {
+    "id": 4,
+    "productCode": "ELC-7X1-OLD",
+    "name": "Kasetka tygodniowa 7×1 (wycofana)",
+    "description": null,
+    "daysCovered": 7,
+    "compartmentsPerDay": 1,
+    "active": false,
+    "createdAt": "2026-10-30T08:00:00Z"
+  }
+]

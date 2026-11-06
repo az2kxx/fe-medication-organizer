@@ -1,0 +1,17 @@
+{
+  "id": 3,
+  "productCode": "ELC-1X4",
+  "name": "Kasetka dzienna 4 pory",
+  "qrCodeValue": "ELCOMP:ELC-1X4",
+  "description": "Jeden dzień z czterema przegródkami do wielokrotnego napełniania.",
+  "daysCovered": 1,
+  "compartmentsPerDay": 4,
+  "active": true,
+  "createdAt": "2026-10-30T08:00:00Z",
+  "compartments": [
+    { "id": 203, "positionIndex": 2, "label": "wieczór", "dayOfWeek": null, "timeOfDay": "EVENING" },
+    { "id": 201, "positionIndex": 0, "label": "rano", "dayOfWeek": null, "timeOfDay": "MORNING" },
+    { "id": 202, "positionIndex": 1, "label": "południe", "dayOfWeek": null, "timeOfDay": "NOON" },
+    { "id": 204, "positionIndex": 3, "label": "noc", "dayOfWeek": null, "timeOfDay": null }
+  ]
+}
