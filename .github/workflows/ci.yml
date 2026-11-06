@@ -25,8 +25,6 @@ jobs:
           distribution: temurin
           java-version: '21'
       - uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5
-      - name: Install Android SDK packages
-        run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
       - name: Assemble APK and run startup smoke test
         run: ./gradlew --no-daemon :androidApp:assembleDebug :androidApp:testDebugUnitTest
 
