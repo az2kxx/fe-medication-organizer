@@ -84,11 +84,11 @@ data class CompartmentDefinition(
 )
 
 @Serializable
-@OptIn(ExperimentalSerializationApi::class)
 data class CreateMedication(
     val name: String,
     val doseAmount: JsonPrimitive,
     val doseUnit: String,
+    @OptIn(ExperimentalSerializationApi::class)
     @EncodeDefault val startDate: String = DEMO_DATE,
     val endDate: String? = null,
     val strengthValue: JsonPrimitive? = null,

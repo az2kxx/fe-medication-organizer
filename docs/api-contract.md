@@ -96,7 +96,7 @@ Warstwa transportu mapuje status HTTP na kategorię i lokalny komunikat `ApiExce
 
 Projekt zakłada publiczny odczyt katalogu oraz uwierzytelnienie i kontrolę dostępu do pozostałych zasobów. Obecny backend udostępnia m.in. `GET /api/users/{id}` i `PATCH /api/users/change-display-name`. Odczyt przez ID jest dostępny dla uwierzytelnionych użytkowników niezależnie od właściciela profilu. Zmiana nazwy wymaga bieżącego hasła. Docelowe trasy profilu i preferencji poniżej pozostają do uzgodnienia przed integracją `LIVE`. [Kontroler użytkowników](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/users/UserController.java#L51-L81) · [Odczyt przez ID](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/users/UserService.java#L44-L50)
 
-`services.profile` udostępnia profil i preferencje. `services.demo` udostępnia odczyt modelu kasetki po ID, listę, dodawanie i edycję leków, zmianę ich statusu, zastąpienie harmonogramu, plan dnia i tygodnia, przygotowanie kasetki oraz zapis i odczyt deklaracji przyjęcia. Tabela obejmuje także trasy planowane dla kolejnych zadań. [Repozytorium profilu](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/features/profile/data/ProfileRepository.kt) · [Repozytorium demo](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/core/demo/DemoRepository.kt)
+`services.profile` udostępnia profil i preferencje. `services.demo` udostępnia odczyt modelu kasetki po ID, listę i dodawanie leków, zastąpienie harmonogramu, plan dnia i tygodnia, przygotowanie kasetki oraz zapis i odczyt deklaracji przyjęcia. Tabela obejmuje także trasy planowane dla kolejnych zadań. [Repozytorium profilu](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/features/profile/data/ProfileRepository.kt) · [Repozytorium demo](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/core/demo/DemoRepository.kt)
 
 | Metoda | Trasa | Zastosowanie |
 | --- | --- | --- |
@@ -173,7 +173,7 @@ Robocze DTO przyjmuje opcjonalne `form` o wartościach `TABLET`, `CAPSULE`, `LIQ
 
 ### Edycja leku i zmiana statusu w MOCK
 
-`PATCH /api/medications/{id}` przyjmuje pełny zestaw edytowalnych pól formularza. `name`, `doseAmount`, `doseUnit` i `startDate` są wymagane. Pominięcie pola opcjonalnego lub wartość `null` usuwa jego dotychczasową wartość. `PATCH /api/medications/{id}/status` przyjmuje obiekt z polem `status`. Obie trasy zwracają `200` oraz skrót leku z polami `id`, `name` i `status`. Kształt żądań i odpowiedzi PATCH to założenie mocka do potwierdzenia przed integracją. [Fixture edycji](../composeApp/src/androidHostTest/resources/fixtures/demo-contract/medication-update-request.json) · [Fixture zmiany statusu](../composeApp/src/androidHostTest/resources/fixtures/demo-contract/medication-status-request.json)
+W `services.demo` metody `updateMedication` i `updateMedicationStatus` wywołują obie trasy PATCH. `PATCH /api/medications/{id}` przyjmuje pełny formularz. `name`, `doseAmount`, `doseUnit` i `startDate` są wymagane. Pominięcie pola opcjonalnego lub wartość `null` usuwa jego dotychczasową wartość. `PATCH /api/medications/{id}/status` przyjmuje obiekt z polem `status`. Obie trasy zwracają `200` oraz skrót leku z polami `id`, `name` i `status`. Przed integracją trzeba potwierdzić pola żądań i odpowiedzi, zachowanie przy pominięciu pól oraz dozwolone przejścia statusów. [Fixture edycji](../composeApp/src/androidHostTest/resources/fixtures/demo-contract/medication-update-request.json) · [Fixture zmiany statusu](../composeApp/src/androidHostTest/resources/fixtures/demo-contract/medication-status-request.json)
 
 Edycja przelicza dawki `PENDING` od daty demo. Zawieszenie lub dezaktywacja usuwa takie dawki z planu, a ponowna aktywacja pozwala je wygenerować. Potwierdzone dawki zachowują zapisane dane, a historia pozostaje dostępna.
 
@@ -264,7 +264,7 @@ Roboczy plan dnia zwraca tablicę. Dzień bez dawek zwraca `[]`. DTO odczytują 
 ## Do uzgodnienia z backendem
 
 - Pełne odpowiedzi katalogu, profilu, preferencji, przypisania kasetki, planu dnia i tygodnia, historii oraz sesji przygotowania. Potrzebujemy także formatu pustych list, wyniku wyszukiwania QR i odpowiedzi przy braku bieżącej sesji.
-- Wymagane i opcjonalne pola mutacji leków, w tym `form`, semantyka częściowego PATCH i dozwolone przejścia statusów. Trzeba też potwierdzić dopuszczalne wartości `timeOfDay` oraz numerację dni tygodnia.
+- Dozwolone pola mutacji bez przykładów, w tym `form` przy dodawaniu leku. W modelu danych jest `form`, a skrócone żądanie nie pokazuje tego pola. Trzeba potwierdzić wymagane i opcjonalne pola, dopuszczalne wartości `timeOfDay` oraz numerację dni tygodnia.
 - Reguły przypisania dawek do kasetki i przegródki oraz kształt odpowiedzi dla dawki bez przypisanej przegródki. Plan powinien przekazywać dane potrzebne kreatorowi i widokowi kasetki.
 - Reguła nadawania `MISSED`, zachowanie lokalnego czasu w razie zmiany strefy lub przejścia na czas letni i zimowy oraz obsługa ponownego zgłoszenia lub korekty intake.
 - Lista wymaganych przegródek do zakończenia przygotowania, sposób wskazania braków przy `409`, format błędów, kody domenowe i błędy poszczególnych pól walidacji.
