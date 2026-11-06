@@ -16,8 +16,10 @@ robolectric = "4.16.1"
 activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
 compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "compose" }
 compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "compose-material3" }
+compose-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "compose" }
 compose-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "compose-android" }
 compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose" }
+compose-backhandler = { module = "org.jetbrains.compose.ui:ui-backhandler", version.ref = "compose" }
 junit = { module = "junit:junit", version.ref = "junit" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }

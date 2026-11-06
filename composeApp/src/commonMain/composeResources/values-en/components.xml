@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="component_error_title">Something went wrong</string>
+    <string name="component_loading">Loading…</string>
+    <string name="component_retry">Try again</string>
+    <string name="component_saving">Saving…</string>
+</resources>

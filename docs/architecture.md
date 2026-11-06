@@ -1,6 +1,6 @@
 # Architektura frontendu
 
-Frontend EL COMP to aplikacja mobilna Kotlin Multiplatform z interfejsem Compose Multiplatform dla Androida i iOS. FE-01 dostarcza wspólny ekran startowy i konfigurację CI. Nawigacja oraz wspólne komponenty należą do FE-04. [FE-01](https://github.com/az2kxx/fe-medication-organizer/issues/1) · [FE-04](https://github.com/az2kxx/fe-medication-organizer/issues/4)
+Frontend EL COMP to aplikacja mobilna Kotlin Multiplatform z interfejsem Compose Multiplatform dla Androida i iOS. Obie platformy korzystają ze wspólnego powitania, ekranu Dzisiaj i dolnej nawigacji. [FE-04](https://github.com/az2kxx/fe-medication-organizer/issues/4)
 
 ## Moduły i źródła
 
@@ -13,6 +13,10 @@ Frontend EL COMP to aplikacja mobilna Kotlin Multiplatform z interfejsem Compose
 | `iosApp/` | Host SwiftUI i projekt Xcode, który osadza framework Kotlin. |
 
 Punkt wejścia do wspólnego UI znajduje się w pakiecie `app`. Przy kolejnych zadaniach dodawajcie pakiety, gdy pojawi się kod, który do nich należy. `app` scala zależności i zawiera nawigację. `core/ui` gromadzi współdzielone komponenty i motyw. `core/network` zawiera wspólną konfigurację transportu, autoryzacji i obsługi błędów. `core/demo` przechowuje fikcyjne dane i stan demonstracyjny.
+
+Powitanie otwiera Dzisiaj po wybraniu **Zacznij**. Dolne zakładki prowadzą bezpośrednio do Dzisiaj, Kasetki, Leków i Historii. Przygotowanie jest podstroną Kasetki i prowadzi z powrotem do Kasetki. Ustawienia są dostępne z Dzisiaj, a z nich można przejść do opcjonalnej edycji lokalnego profilu. Nawigacja i nazwa wyświetlana korzystają z lokalnego stanu interfejsu niezależnie od trybu transportu.
+
+Wspólne komponenty w `core/ui` obsługują pola z błędami, blokadę ponownego wysłania formularza podczas zapisu, a także stany ładowania, pustej listy i błędu z akcją ponowienia. Tekst i semantyka nadają znaczenie statusom, a ikony wspierają ich odczyt. Napisy oraz etykiety dostępności są w zasobach Compose z wersjami PL i EN.
 
 Kod każdej funkcji trzymajcie pod `features/<feature>/`. `presentation` zawiera ekrany, ViewModele i stan UI. `domain` zawiera modele używane przez aplikację i interfejsy repozytoriów. `data` mapuje DTO i implementuje repozytoria. Aparat, powiadomienia oraz bezpieczny zapis tokenu trafiają do kodu platformowego, gdy dana funkcja ich potrzebuje.
 
