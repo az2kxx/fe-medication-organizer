@@ -62,7 +62,17 @@ internal object DemoCatalog {
         ),
     )
 
+    /**
+     * QR values printed on the demo organizers. The format is a fixture assumption: the backend stores an opaque
+     * `qrCodeValue` per model. Printable codes for the demo are in docs/qr-demo.
+     */
+    val qrCodes: Map<Long, String> = models.associate { it.id to "ELCOMP:${it.productCode}" }
+
     fun model(id: Long): OrganizerModelDetails? = models.firstOrNull { it.id == id }
+
+    /** QR values are compared exactly, unlike product codes typed by the user. */
+    fun findByQrCode(value: String): List<OrganizerModelDetails> =
+        models.filter { qrCodes[it.id] == value }
 
     fun findByProductCode(code: String): List<OrganizerModelDetails> {
         val normalized = code.trim()

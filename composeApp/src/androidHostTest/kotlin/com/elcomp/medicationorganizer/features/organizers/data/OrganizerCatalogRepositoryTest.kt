@@ -1,6 +1,7 @@
 package com.elcomp.medicationorganizer.features.organizers.data
 
 import com.elcomp.medicationorganizer.core.demo.DEMO_MODEL_7X3_ID
+import com.elcomp.medicationorganizer.core.demo.DemoCatalog
 import com.elcomp.medicationorganizer.core.demo.DEMO_MODEL_7X3_PRODUCT_CODE
 import com.elcomp.medicationorganizer.core.demo.DEMO_MODEL_DAILY_ID
 import com.elcomp.medicationorganizer.core.demo.DEMO_MODEL_ID
@@ -10,6 +11,7 @@ import com.elcomp.medicationorganizer.core.network.ApiClient
 import com.elcomp.medicationorganizer.core.network.ApiError
 import com.elcomp.medicationorganizer.core.network.ApiException
 import com.elcomp.medicationorganizer.core.network.ApiSettings
+import com.elcomp.medicationorganizer.core.network.DemoSession
 import com.elcomp.medicationorganizer.core.network.AppServices
 import com.elcomp.medicationorganizer.core.network.MockScenario
 import com.elcomp.medicationorganizer.core.network.apiJson
@@ -63,15 +65,23 @@ class OrganizerCatalogRepositoryTest {
             catalog.models()
             catalog.findByProductCode("  ELC 7/3&x=1  ")
             catalog.model(DEMO_MODEL_DAILY_ID)
+            catalog.findByQrCode("https://example.com/p?id=ELC 7X3&lang=pl#top")
 
             assertEquals(
-                listOf("/api/organizer-models", "/api/organizer-models", "/api/organizer-models/3"),
+                listOf(
+                    "/api/organizer-models",
+                    "/api/organizer-models",
+                    "/api/organizer-models/3",
+                    "/api/organizer-models",
+                ),
                 requests.map { it.url.encodedPath },
             )
             assertTrue(requests.none { it.headers.contains(HttpHeaders.Authorization) })
             assertNull(requests[0].url.parameters["productCode"])
             assertEquals("ELC 7/3&x=1", requests[1].url.parameters["productCode"])
             assertEquals(setOf("productCode"), requests[1].url.parameters.names())
+            assertEquals("https://example.com/p?id=ELC 7X3&lang=pl#top", requests[3].url.parameters["qrCode"])
+            assertEquals(setOf("qrCode"), requests[3].url.parameters.names())
         } finally {
             client.close()
         }
@@ -150,6 +160,42 @@ class OrganizerCatalogRepositoryTest {
             assertEquals(ApiError.NOT_FOUND, assertFailsWith<ApiException> { catalog.model(99) }.error)
         } finally {
             services.close()
+        }
+    }
+
+    @Test
+    fun demoQrLookupMatchesExactValuesAndRejectsTwoFilters() = runBlocking<Unit> {
+        val services = AppServices.create(ApiSettings.Mock())
+        try {
+            val catalog = assertNotNull(services.organizers)
+            for ((id, value) in DemoCatalog.qrCodes) {
+                assertEquals(listOf(id), catalog.findByQrCode(value).map(OrganizerModelSummary::id))
+            }
+            assertEquals("ELCOMP:ELC-7X3", DemoCatalog.qrCodes[DEMO_MODEL_7X3_ID])
+            assertTrue(catalog.findByQrCode("elcomp:elc-7x3").isEmpty())
+            assertTrue(catalog.findByQrCode("ELC-7X3").isEmpty())
+            assertFalse(catalog.findByQrCode("ELCOMP:ELC-7X1-OLD").single().active)
+
+        } finally {
+            services.close()
+        }
+
+        val mock = DemoSession(MockScenario.NORMAL, Clock.System)
+        val client = HttpClient(MockEngine) {
+            configureApiClient()
+            engine {
+                addHandler { request -> with(mock) { handle(request) } }
+            }
+        }
+        try {
+            val both = assertFailsWith<ApiException> {
+                ApiClient(client, origin).get<List<OrganizerModelSummary>>(
+                    "/api/organizer-models?productCode=ELC-7X3&qrCode=ELCOMP%3AELC-7X3",
+                )
+            }
+            assertEquals(ApiError.INVALID_REQUEST, both.error)
+        } finally {
+            client.close()
         }
     }
 

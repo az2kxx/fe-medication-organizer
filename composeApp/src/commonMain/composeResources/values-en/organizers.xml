@@ -1,7 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="organizer_choose_model">Choose organizer model</string>
-    <string name="organizer_catalog_title">Organizer model</string>
+    <string name="organizer_add">Add organizer</string>
+    <string name="organizer_catalog_title">Add organizer</string>
+    <string name="organizer_scan_intro">Point the camera at the QR code on the organizer or its packaging.</string>
+    <string name="organizer_scan_preview">Camera preview for scanning the QR code</string>
+    <string name="organizer_scan_looking_up">Checking the code…</string>
+    <string name="organizer_scan_not_recognized_title">Code not recognised</string>
+    <string name="organizer_scan_not_recognized_message">This QR code does not match any known EL COMP organizer. Scan it again or choose the model manually.</string>
+    <string name="organizer_scan_failed">Couldn't check the code.</string>
+    <string name="organizer_scan_permission_title">No camera access</string>
+    <string name="organizer_scan_permission_message">To scan the code, allow camera access in the phone settings. You can also choose the model manually.</string>
+    <string name="organizer_scan_unavailable_title">Camera unavailable</string>
+    <string name="organizer_scan_unavailable_message">The camera can't be used on this device. Choose the model manually.</string>
+    <string name="organizer_scan_again">Scan again</string>
+    <string name="organizer_choose_manually">Choose model manually</string>
     <string name="organizer_catalog_intro">Pick a model from the list or enter the product code from the packaging.</string>
     <string name="organizer_catalog_live_unavailable">The organizer catalog is currently available in demo mode.</string>
     <string name="organizer_catalog_code_label">Product code</string>

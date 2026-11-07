@@ -145,7 +145,7 @@ internal fun AppNavigation(
                         }
                         Destination.Organizer -> {
                             Text(stringResource(Res.string.organizer_description), style = MaterialTheme.typography.bodyLarge)
-                            SecondaryAction(Res.string.organizer_choose_model, "organizer-open-catalog") {
+                            SecondaryAction(Res.string.organizer_add, "organizer-add") {
                                 navigate(Destination.OrganizerCatalog)
                             }
                             AppActionButton(

@@ -8,6 +8,7 @@ GENERATE_INFOPLIST_FILE = YES
 INFOPLIST_FILE = Info.plist
 INFOPLIST_FILE[config=Debug] = Info-Debug.plist
 INFOPLIST_KEY_CFBundleDisplayName = EL COMP
+INFOPLIST_KEY_NSCameraUsageDescription = Aparat służy do zeskanowania kodu QR kasetki EL COMP.
 INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES
 INFOPLIST_KEY_UILaunchScreen_Generation = YES
 IPHONEOS_DEPLOYMENT_TARGET = 16.0

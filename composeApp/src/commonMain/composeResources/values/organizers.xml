@@ -1,7 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="organizer_choose_model">Wybierz model kasetki</string>
-    <string name="organizer_catalog_title">Model kasetki</string>
+    <string name="organizer_add">Dodaj kasetkę</string>
+    <string name="organizer_catalog_title">Dodaj kasetkę</string>
+    <string name="organizer_scan_intro">Skieruj aparat na kod QR na kasetce lub jej opakowaniu.</string>
+    <string name="organizer_scan_preview">Podgląd aparatu do skanowania kodu QR</string>
+    <string name="organizer_scan_looking_up">Sprawdzanie kodu…</string>
+    <string name="organizer_scan_not_recognized_title">Nie rozpoznano kodu</string>
+    <string name="organizer_scan_not_recognized_message">Ten kod QR nie pasuje do żadnej znanej kasetki EL COMP. Zeskanuj go ponownie albo wybierz model ręcznie.</string>
+    <string name="organizer_scan_failed">Nie udało się sprawdzić kodu.</string>
+    <string name="organizer_scan_permission_title">Brak dostępu do aparatu</string>
+    <string name="organizer_scan_permission_message">Aby zeskanować kod, zezwól na użycie aparatu w ustawieniach telefonu. Możesz też wybrać model ręcznie.</string>
+    <string name="organizer_scan_unavailable_title">Aparat jest niedostępny</string>
+    <string name="organizer_scan_unavailable_message">Nie można użyć aparatu na tym urządzeniu. Wybierz model ręcznie.</string>
+    <string name="organizer_scan_again">Skanuj ponownie</string>
+    <string name="organizer_choose_manually">Wybierz model ręcznie</string>
     <string name="organizer_catalog_intro">Wybierz model z listy albo wpisz kod produktu z opakowania.</string>
     <string name="organizer_catalog_live_unavailable">Katalog kasetek jest na razie dostępny w trybie demo.</string>
     <string name="organizer_catalog_code_label">Kod produktu</string>

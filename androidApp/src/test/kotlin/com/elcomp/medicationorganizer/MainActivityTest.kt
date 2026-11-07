@@ -1,5 +1,7 @@
 package com.elcomp.medicationorganizer
 
+import android.Manifest
+import android.content.pm.PackageManager
 import androidx.activity.compose.setContent
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.text.AnnotatedString
@@ -30,6 +32,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
@@ -238,7 +241,7 @@ class MainActivityTest {
     fun organizerCatalogSearchesByCodeShowsLayoutAndBlocksInactiveModel() {
         startFromWelcome()
         composeRule.onNodeWithTag("tab-organizer").performClick()
-        composeRule.onNodeWithTag("organizer-open-catalog").performScrollTo().performClick()
+        openManualCatalog()
         assertEventuallyDisplayed(hasTestTag("screen-organizer-catalog"))
         waitForNode(hasTestTag("organizer-model-4"))
 
@@ -280,7 +283,46 @@ class MainActivityTest {
         pressSystemBack()
         waitForNode(hasTestTag("organizer-model-4"))
         pressSystemBack()
+        waitForNode(hasTestTag("organizer-scan-intro"))
+        pressSystemBack()
         composeRule.onNodeWithTag("screen-organizer").assertIsDisplayed()
+    }
+
+    @Test
+    fun addOrganizerWithoutCameraExplainsAndFallsBackToManualSelection() {
+        shadowOf(composeRule.activity.packageManager).setSystemFeature(PackageManager.FEATURE_CAMERA_ANY, false)
+        openAddOrganizer()
+        waitForNode(hasTestTag("organizer-scan-unavailable"))
+        composeRule.onNodeWithText("Aparat jest niedostępny").assertExists()
+
+        composeRule.onNodeWithTag("organizer-choose-manually").performScrollTo().performClick()
+        waitForNode(hasTestTag("organizer-model-1"))
+        pressSystemBack()
+        waitForNode(hasTestTag("organizer-scan-intro"))
+        pressSystemBack()
+        composeRule.onNodeWithTag("screen-organizer").assertIsDisplayed()
+    }
+
+    @Test
+    fun deniedCameraPermissionExplainsAndKeepsManualSelection() {
+        shadowOf(composeRule.activity.packageManager).setSystemFeature(PackageManager.FEATURE_CAMERA_ANY, true)
+        openAddOrganizer()
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            shadowOf(composeRule.activity).lastRequestedPermission != null
+        }
+        val request = shadowOf(composeRule.activity).lastRequestedPermission
+        assertEquals(listOf(Manifest.permission.CAMERA), request.requestedPermissions.toList())
+        composeRule.runOnIdle {
+            composeRule.activity.onRequestPermissionsResult(
+                request.requestCode,
+                request.requestedPermissions,
+                intArrayOf(PackageManager.PERMISSION_DENIED),
+            )
+        }
+
+        waitForNode(hasTestTag("organizer-scan-permission"))
+        composeRule.onNodeWithText("Brak dostępu do aparatu").assertExists()
+        composeRule.onNodeWithTag("organizer-choose-manually").performScrollTo().assertIsDisplayed()
     }
 
     @Test
@@ -288,7 +330,7 @@ class MainActivityTest {
     fun organizerCatalogStepsOpenWithTheirHeadingVisibleWithLargeText() {
         startFromWelcome()
         composeRule.onNodeWithTag("tab-organizer").performClick()
-        composeRule.onNodeWithTag("organizer-open-catalog").performScrollTo().performClick()
+        openManualCatalog()
         waitForNode(hasTestTag("organizer-model-4"))
         composeRule.onNodeWithTag("organizer-model-2").performScrollTo().performClick()
 
@@ -310,7 +352,7 @@ class MainActivityTest {
     fun organizerCatalogUsesEnglishDayAndTimeNames() {
         startFromWelcome()
         composeRule.onNodeWithTag("tab-organizer").performClick()
-        composeRule.onNodeWithTag("organizer-open-catalog").performScrollTo().performClick()
+        openManualCatalog()
         waitForNode(hasTestTag("organizer-model-3"))
         composeRule.onNodeWithTag("organizer-model-3").performScrollTo().performClick()
         waitForNode(hasTestTag("organizer-details"))
@@ -405,6 +447,20 @@ class MainActivityTest {
     private fun openPreparation() {
         composeRule.onNodeWithTag("organizer-open-preparation").performScrollTo().performClick()
         composeRule.onNodeWithTag("screen-preparation").assertIsDisplayed()
+    }
+
+    private fun openAddOrganizer() {
+        startFromWelcome()
+        composeRule.onNodeWithTag("tab-organizer").performClick()
+        composeRule.onNodeWithTag("organizer-add").performScrollTo().performClick()
+        waitForNode(hasTestTag("organizer-scan-intro"))
+    }
+
+    /** The manual choice is offered in every scanner state, with or without a camera. */
+    private fun openManualCatalog() {
+        composeRule.onNodeWithTag("organizer-add").performScrollTo().performClick()
+        waitForNode(hasTestTag("organizer-choose-manually"))
+        composeRule.onNodeWithTag("organizer-choose-manually").performScrollTo().performClick()
     }
 
     private fun pressSystemBack() {

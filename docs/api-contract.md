@@ -138,6 +138,7 @@ Wszystkie trzy odczyty są publiczne. Klient nie wysyła `Authorization` nawet p
 | --- | --- |
 | `GET /api/organizer-models` | Tablica modeli bez przegródek. Zawiera też modele nieaktywne. |
 | `GET /api/organizer-models?productCode=...` | Ta sama tablica zawężona do kodu. Nieznany kod daje pustą tablicę, a nie `404`. |
+| `GET /api/organizer-models?qrCode=...` | Ta sama tablica z modelem o danym `qrCodeValue`. Nieznany kod daje pustą tablicę. |
 | `GET /api/organizer-models/{id}` | Jeden model z tablicą `compartments`. Nieznane ID daje `404`. |
 
 Model ma pola `id` (`Long`), `productCode`, `name`, `active` oraz opcjonalne `description`, `daysCovered` i `compartmentsPerDay`. Przegródka ma pola `id` (`Long`), `positionIndex`, `label` oraz opcjonalne `dayOfWeek` (1–7 od poniedziałku) i `timeOfDay` (`MORNING`, `NOON`, `EVENING`, `NIGHT`, `OTHER`). Klient pomija pozostałe pola, np. `qrCodeValue` i `createdAt`. [Fixture listy](../composeApp/src/androidHostTest/resources/fixtures/organizers/organizer-models-response.json) · [Fixture modelu](../composeApp/src/androidHostTest/resources/fixtures/organizers/organizer-model-daily-response.json)
@@ -145,6 +146,8 @@ Model ma pola `id` (`Long`), `productCode`, `name`, `active` oraz opcjonalne `de
 Układ kasetki wynika z przegródek posortowanych według `positionIndex`. Rząd ma `compartmentsPerDay` przegródek. Bez tej wartości rząd tworzą kolejne przegródki z tym samym `dayOfWeek`. Interfejs pokazuje model nieaktywny, ale nie pozwala go wybrać do nowego przypisania. [Układ przegródek](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/features/organizers/domain/OrganizerLayout.kt)
 
 Klient usuwa białe znaki z końców kodu i koduje go w całości w zapytaniu. `MOCK` porównuje kod bez rozróżniania wielkości liter. Katalog demo ma model 7×2 używany przez plan i przygotowanie, model 7×3 (`ELC-7X3`), model dzienny 1×4 bez dni tygodnia i nieaktywny model 7×1. Scenariusz `EMPTY` zachowuje katalog. [Katalog demo](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/core/demo/DemoCatalog.kt)
+
+Klient przesyła odczytany tekst QR bez zmian, poza usunięciem białych znaków z końców. Odrzuca wartość pustą, dłuższą niż 255 znaków (długość `qr_code_value` w schemacie) albo zawierającą znaki sterujące. Nie interpretuje jej jako adresu URL ani jej nie otwiera. Wynik inny niż dokładnie jeden model traktuje jako nierozpoznany kod. `MOCK` porównuje wartość QR dokładnie, a jednoczesne `productCode` i `qrCode` daje `400`. [Kody demo](qr-demo/README.md)
 
 Katalog nie ma instrukcji produktu ani zdjęć modeli. Projekt backendu nie przewiduje dla nich pól ani tras.
 
@@ -260,7 +263,7 @@ Odpowiedź `200 OK`
 
 ## Do uzgodnienia z backendem
 
-- Kształt odpowiedzi katalogu z sekcji o katalogu: lista bez przegródek, pusta tablica dla nieznanego kodu, obecność modeli nieaktywnych na liście i porównanie kodu bez rozróżniania wielkości liter.
+- Kształt odpowiedzi katalogu z sekcji o katalogu: lista bez przegródek, pusta tablica dla nieznanego kodu, obecność modeli nieaktywnych na liście i porównanie kodu bez rozróżniania wielkości liter. Format wartości QR nadrukowanej na kasetkach i jej zgodność z `qrCodeValue`.
 - Pełne odpowiedzi profilu, preferencji, przypisania kasetki, planu dnia i tygodnia, historii oraz sesji przygotowania. Potrzebujemy także formatu pustych list, wyniku wyszukiwania QR i odpowiedzi przy braku bieżącej sesji.
 - Dozwolone pola mutacji bez przykładów, w tym `form` przy dodawaniu leku. W modelu danych jest `form`, a skrócone żądanie nie pokazuje tego pola. Trzeba potwierdzić wymagane i opcjonalne pola, dopuszczalne wartości `timeOfDay` oraz numerację dni tygodnia.
 - Reguły przypisania dawek do kasetki i przegródki oraz kształt odpowiedzi dla dawki bez przypisanej przegródki. Plan powinien przekazywać dane potrzebne kreatorowi i widokowi kasetki.

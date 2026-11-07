@@ -3,6 +3,7 @@ package com.elcomp.medicationorganizer.features.organizers.presentation
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -25,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.backhandler.BackHandler
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -43,6 +45,8 @@ import com.elcomp.medicationorganizer.features.organizers.data.OrganizerCatalogR
 import com.elcomp.medicationorganizer.features.organizers.data.dto.CompartmentDefinitionResponse
 import com.elcomp.medicationorganizer.features.organizers.data.dto.OrganizerModelDetails
 import com.elcomp.medicationorganizer.features.organizers.data.dto.OrganizerModelSummary
+import com.elcomp.medicationorganizer.features.organizers.domain.QrScanDecision
+import com.elcomp.medicationorganizer.features.organizers.domain.QrScanSession
 import com.elcomp.medicationorganizer.features.organizers.domain.layoutRows
 import com.elcomp.medicationorganizer.resources.*
 import org.jetbrains.compose.resources.StringResource
@@ -55,7 +59,8 @@ private sealed interface LoadState<out T> {
 }
 
 /**
- * Catalog → model details → confirmation. [onAssign] saves the assignment (FE-09). While it is null the
+ * QR scan (or manual catalog) → model details → confirmation. Scanning is the main path; the catalog is the
+ * fallback when the code cannot be read. [onAssign] saves the assignment (FE-09). While it is null the
  * confirmation step explains that saving is not available yet.
  */
 @OptIn(ExperimentalComposeUiApi::class)
@@ -64,35 +69,144 @@ internal fun OrganizerCatalogFlow(
     repository: OrganizerCatalogRepository,
     onAssign: (suspend (OrganizerModelDetails) -> Unit)? = null,
 ) {
+    var manual by rememberSaveable { mutableStateOf(false) }
     var selectedId by rememberSaveable { mutableStateOf<Long?>(null) }
     var confirming by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf<String?>(null) }
 
-    fun backToCatalog() {
+    /** Returns to the step the model was found in: the catalog or a fresh scan. */
+    fun backToSource() {
         confirming = false
         selectedId = null
     }
 
-    BackHandler(enabled = selectedId != null) {
-        if (confirming) confirming = false else backToCatalog()
+    BackHandler(enabled = selectedId != null || manual) {
+        when {
+            confirming -> confirming = false
+            selectedId != null -> backToSource()
+            else -> manual = false
+        }
     }
 
-    when (val id = selectedId) {
-        null -> CatalogStep(
+    val id = selectedId
+    when {
+        id != null -> ModelStep(
+            repository = repository,
+            modelId = id,
+            confirming = confirming,
+            backLabel = if (manual) Res.string.organizer_back_catalog else Res.string.organizer_scan_again,
+            onSelect = { confirming = true },
+            onBack = ::backToSource,
+            onAssign = onAssign,
+        )
+        manual -> CatalogStep(
             repository = repository,
             query = query,
             onSearch = { query = it },
             onOpen = { selectedId = it },
         )
-        else -> ModelStep(
+        else -> ScanStep(
             repository = repository,
-            modelId = id,
-            confirming = confirming,
-            onSelect = { confirming = true },
-            onBack = ::backToCatalog,
-            onAssign = onAssign,
+            onFound = { selectedId = it },
+            onManual = { manual = true },
         )
     }
+}
+
+private sealed interface ScanState {
+    data object Scanning : ScanState
+    data class LookingUp(val code: String) : ScanState
+    data object NotRecognized : ScanState
+    data class LookupFailed(val code: String) : ScanState
+    data object PermissionDenied : ScanState
+    data object CameraUnavailable : ScanState
+}
+
+@Composable
+private fun ScanStep(
+    repository: OrganizerCatalogRepository,
+    onFound: (Long) -> Unit,
+    onManual: () -> Unit,
+) {
+    val session = remember { QrScanSession() }
+    var state by remember { mutableStateOf<ScanState>(ScanState.Scanning) }
+
+    fun scanAgain() {
+        session.restart()
+        state = ScanState.Scanning
+    }
+
+    val lookupCode = (state as? ScanState.LookingUp)?.code
+    LaunchedEffect(lookupCode) {
+        if (lookupCode == null) return@LaunchedEffect
+        val model = try {
+            repository.findByQrCode(lookupCode).singleOrNull()
+        } catch (_: ApiException) {
+            state = ScanState.LookupFailed(lookupCode)
+            return@LaunchedEffect
+        }
+        if (model == null) state = ScanState.NotRecognized else onFound(model.id)
+    }
+
+    Text(
+        stringResource(Res.string.organizer_scan_intro),
+        modifier = Modifier.revealOnEnter().testTag("organizer-scan-intro"),
+        style = MaterialTheme.typography.bodyLarge,
+    )
+    when (val current = state) {
+        ScanState.Scanning, is ScanState.LookingUp -> {
+            PlatformQrScanner(
+                onEvent = { event ->
+                    when (event) {
+                        is QrScanEvent.Detected -> when (val decision = session.accept(event.value)) {
+                            is QrScanDecision.Lookup -> state = ScanState.LookingUp(decision.code)
+                            QrScanDecision.Invalid -> state = ScanState.NotRecognized
+                            QrScanDecision.Ignore -> Unit
+                        }
+                        QrScanEvent.PermissionDenied -> state = ScanState.PermissionDenied
+                        QrScanEvent.CameraUnavailable -> state = ScanState.CameraUnavailable
+                    }
+                },
+                contentDescription = stringResource(Res.string.organizer_scan_preview),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .clip(MaterialTheme.shapes.large)
+                    .testTag("organizer-scanner"),
+            )
+            if (current is ScanState.LookingUp) {
+                AppLoadingState(message = stringResource(Res.string.organizer_scan_looking_up))
+            }
+        }
+        ScanState.NotRecognized -> {
+            AppEmptyState(
+                title = stringResource(Res.string.organizer_scan_not_recognized_title),
+                message = stringResource(Res.string.organizer_scan_not_recognized_message),
+                modifier = Modifier.testTag("organizer-scan-not-recognized"),
+            )
+            AppActionButton(
+                text = stringResource(Res.string.organizer_scan_again),
+                onClick = ::scanAgain,
+                modifier = Modifier.fillMaxWidth().testTag("organizer-scan-again"),
+            )
+        }
+        is ScanState.LookupFailed -> AppErrorState(
+            message = stringResource(Res.string.organizer_scan_failed),
+            onRetry = { state = ScanState.LookingUp(current.code) },
+            modifier = Modifier.testTag("organizer-scan-failed"),
+        )
+        ScanState.PermissionDenied -> AppEmptyState(
+            title = stringResource(Res.string.organizer_scan_permission_title),
+            message = stringResource(Res.string.organizer_scan_permission_message),
+            modifier = Modifier.testTag("organizer-scan-permission"),
+        )
+        ScanState.CameraUnavailable -> AppEmptyState(
+            title = stringResource(Res.string.organizer_scan_unavailable_title),
+            message = stringResource(Res.string.organizer_scan_unavailable_message),
+            modifier = Modifier.testTag("organizer-scan-unavailable"),
+        )
+    }
+    SecondaryButton(Res.string.organizer_choose_manually, "organizer-choose-manually", onManual)
 }
 
 @Composable
@@ -193,6 +307,7 @@ private fun ModelStep(
     repository: OrganizerCatalogRepository,
     modelId: Long,
     confirming: Boolean,
+    backLabel: StringResource,
     onSelect: () -> Unit,
     onBack: () -> Unit,
     onAssign: (suspend (OrganizerModelDetails) -> Unit)?,
@@ -221,7 +336,7 @@ private fun ModelStep(
         }
     }
     SecondaryButton(
-        if (confirming) Res.string.organizer_change_model else Res.string.organizer_back_catalog,
+        if (confirming) Res.string.organizer_change_model else backLabel,
         "organizer-back-catalog",
         onBack,
     )
