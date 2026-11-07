@@ -75,7 +75,7 @@ internal class DemoSession(
                     login(request)
                 request.method == HttpMethod.Post && request.url.encodedPath == "/api/auth/register" ->
                     register(request)
-                request.method == HttpMethod.Get && request.url.encodedPath.startsWith("/api/organizer-models/") ->
+                request.method == HttpMethod.Get && request.url.encodedPath.isCatalogPath() ->
                     with(routes) { handle(request) }
                 else -> {
                     val account = activeAccount(request) ?: return@withLock respond("", HttpStatusCode.Unauthorized)
@@ -223,6 +223,10 @@ internal class DemoSession(
         null
     }
 }
+
+/** Organizer-model catalog reads are public in the backend design. */
+private fun String.isCatalogPath(): Boolean =
+    this == "/api/organizer-models" || startsWith("/api/organizer-models/")
 
 private val exampleEmail = Regex("[^@\\s]+@example\\.(com|org|net)")
 private val emailFormat = Regex("[^@\\s]+@[^@\\s]+")

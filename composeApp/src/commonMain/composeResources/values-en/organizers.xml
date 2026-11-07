@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="organizer_choose_model">Choose organizer model</string>
+    <string name="organizer_catalog_title">Organizer model</string>
+    <string name="organizer_catalog_intro">Pick a model from the list or enter the product code from the packaging.</string>
+    <string name="organizer_catalog_live_unavailable">The organizer catalog is currently available in demo mode.</string>
+    <string name="organizer_catalog_code_label">Product code</string>
+    <string name="organizer_catalog_code_required">Enter a product code.</string>
+    <string name="organizer_catalog_search">Search</string>
+    <string name="organizer_catalog_show_all">Show all models</string>
+    <string name="organizer_catalog_results">Results for code %1$s</string>
+    <string name="organizer_catalog_failed">Couldn't load the organizer catalog.</string>
+    <string name="organizer_catalog_empty_title">The catalog is empty</string>
+    <string name="organizer_catalog_empty_message">There are no organizer models to choose from.</string>
+    <string name="organizer_search_empty_title">No model found</string>
+    <string name="organizer_search_empty_message">There is no model with code %1$s. Check the code or choose a model from the list.</string>
+    <string name="organizer_product_code">Product code: %1$s</string>
+    <string name="organizer_layout_summary">Days: %1$d · Compartments per day: %2$d</string>
+    <string name="organizer_compartment_count">Compartments: %1$d</string>
+    <string name="organizer_inactive">Not available for new assignments</string>
+    <string name="organizer_details_failed">Couldn't load the organizer model.</string>
+    <string name="organizer_layout_title">Compartment layout</string>
+    <string name="organizer_layout_empty">This model has no compartments described.</string>
+    <string name="organizer_layout_row">Compartments</string>
+    <string name="organizer_select">Choose this model</string>
+    <string name="organizer_back_catalog">Back to catalog</string>
+    <string name="organizer_confirm_title">Confirm your organizer</string>
+    <string name="organizer_confirm_message">Check that the model matches the organizer in front of you.</string>
+    <string name="organizer_assign">Assign organizer</string>
+    <string name="organizer_assign_unavailable">Saving the assignment to your account will be added in a later step.</string>
+    <string name="organizer_assign_failed">Couldn't assign the organizer. Try again.</string>
+    <string name="organizer_change_model">Change model</string>
+
+    <string name="day_1">Monday</string>
+    <string name="day_2">Tuesday</string>
+    <string name="day_3">Wednesday</string>
+    <string name="day_4">Thursday</string>
+    <string name="day_5">Friday</string>
+    <string name="day_6">Saturday</string>
+    <string name="day_7">Sunday</string>
+    <string name="time_of_day_morning">Morning</string>
+    <string name="time_of_day_noon">Noon</string>
+    <string name="time_of_day_evening">Evening</string>
+    <string name="time_of_day_night">Night</string>
+    <string name="time_of_day_other">Other time</string>
+</resources>

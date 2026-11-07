@@ -135,6 +135,7 @@ private fun SignedInApp(services: AppServices, invalidConfiguration: Boolean) {
             invalidConfiguration = invalidConfiguration,
             account = account,
             demo = services.demo,
+            organizers = services.organizers,
             onRetry = { retry++ },
             onSaveDisplayName = { name ->
                 val current = account as AccountUiState.Ready
