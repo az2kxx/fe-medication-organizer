@@ -2,6 +2,15 @@
 
 Mobilny frontend kasetki EL COMP. Android i iOS korzystają ze wspólnego powitania, ekranu Dzisiaj i dolnych zakładek napisanych w Kotlin i Compose Multiplatform.
 
+## Pobranie projektu
+
+`codex/mvp-frontend` jest aktywną gałęzią integracyjną frontendu. Obowiązuje do czasu uzgodnionego przeniesienia MVP na `main`.
+
+```sh
+git clone --branch codex/mvp-frontend https://github.com/az2kxx/fe-medication-organizer.git
+cd fe-medication-organizer
+```
+
 ## Środowisko
 
 - JDK 21 i Gradle Wrapper dołączony do repozytorium.
@@ -100,6 +109,6 @@ Wylogowanie przywraca roboczy plan, przygotowanie i historię do stanu początko
 
 ## Praca nad zadaniami
 
-Utwórz osobną gałąź z aktualnego `main` dla każdego issue. W PR opisz efekt, wykonane sprawdzenia i zależności. GitHub Actions buduje Android APK, uruchamia test startowy i testy hosta oraz kompiluje aplikację na symulator iOS.
+Utwórz osobną gałąź z aktualnego `origin/codex/mvp-frontend` dla każdego issue i wybierz `codex/mvp-frontend` jako bazę PR. W PR opisz efekt, wykonane sprawdzenia i zależności. GitHub Actions buduje APK, uruchamia testy Androida i kompiluje aplikację na symulator iOS dla PR oraz po pushu na gałąź integracyjną.
 
 Wspólna nawigacja zaczyna się w `App()` w `composeApp/src/commonMain`. Elementy dostępnego UI z `core/ui` można wykorzystać w kolejnych ekranach. [Architektura frontendu](docs/architecture.md) · [Zasady pracy dla zespołu, Codexa i Claude’a](docs/working-agreement.md)
