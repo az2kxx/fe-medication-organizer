@@ -98,15 +98,16 @@ data class CreateMedication(
 
 /** Provisional full set of editable fields sent to the medication PATCH route in MOCK. */
 @Serializable
+@OptIn(ExperimentalSerializationApi::class)
 data class UpdateMedication(
     val name: String,
     val doseAmount: JsonPrimitive,
     val doseUnit: String,
     val startDate: String,
-    val endDate: String? = null,
-    val strengthValue: JsonPrimitive? = null,
-    val strengthUnit: String? = null,
-    val form: MedicationForm? = null,
+    @EncodeDefault val endDate: String? = null,
+    @EncodeDefault val strengthValue: JsonPrimitive? = null,
+    @EncodeDefault val strengthUnit: String? = null,
+    @EncodeDefault val form: MedicationForm? = null,
 )
 
 @Serializable

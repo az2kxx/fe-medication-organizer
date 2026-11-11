@@ -3,5 +3,8 @@
   "doseAmount": 0.75,
   "doseUnit": "ML",
   "startDate": "2026-11-02",
+  "endDate": null,
+  "strengthValue": null,
+  "strengthUnit": null,
   "form": "LIQUID"
 }

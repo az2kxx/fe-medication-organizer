@@ -56,6 +56,16 @@ class DemoContractTest {
     }
 
     @Test
+    fun medicationPatchSendsExplicitNullsForClearedFields() {
+        val edit = assertFixtureRoundTrips<UpdateMedication>("medication-update-clear-fields-request.json")
+
+        assertNull(edit.endDate)
+        assertNull(edit.strengthValue)
+        assertNull(edit.strengthUnit)
+        assertNull(edit.form)
+    }
+
+    @Test
     fun medicationPatchesUpdatePendingDosesAndKeepRecordedHistory() = runBlocking<Unit> {
         val services = AppServices.create(ApiSettings.Mock(MockScenario.EMPTY))
         try {
