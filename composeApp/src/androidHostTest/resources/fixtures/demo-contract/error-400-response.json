@@ -1,0 +1,7 @@
+{
+  "timestamp": "2026-11-02T09:00:00Z",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Invalid or malformed request body",
+  "path": "/api/medications"
+}
