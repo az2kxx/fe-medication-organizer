@@ -29,6 +29,9 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -61,6 +64,8 @@ internal class DemoSession(
     private val accounts = mutableMapOf(demoEmail to seedAccount())
     private var active: DemoCredential? = null
     private var seedPreferencesLoaded = false
+    private val currentRevision = MutableStateFlow(0L)
+    val revision: StateFlow<Long> = currentRevision.asStateFlow()
 
     suspend fun MockRequestHandleScope.handle(request: HttpRequestData): HttpResponseData {
         when (scenario) {
@@ -96,12 +101,14 @@ internal class DemoSession(
         active = null
         seedPreferencesLoaded = false
         routes.reset()
+        currentRevision.value++
     }
 
     suspend fun endSession(token: String): Unit = lock.withLock {
         if (active?.token == token) {
             active = null
             routes.reset()
+            currentRevision.value++
         }
     }
 
@@ -123,7 +130,11 @@ internal class DemoSession(
         "PATCH /api/users/me" -> updateDisplayName(request, account)
         "GET /api/users/me/preferences" -> respondJson(readPreferences(account))
         "PUT /api/users/me/preferences" -> savePreferences(request, account)
-        else -> with(routes) { handle(request) }
+        else -> {
+            val response = with(routes) { handle(request) }
+            if (request.method != HttpMethod.Get && response.statusCode.value in 200..299) currentRevision.value++
+            response
+        }
     }
 
     private suspend fun MockRequestHandleScope.updateDisplayName(

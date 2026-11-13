@@ -55,10 +55,12 @@ internal class DemoRoutes(private val empty: Boolean = false) {
                     respond("", HttpStatusCode.NoContent)
                 }
                 "GET /api/medications" -> json(state.medications())
+                "GET /api/medications/{id}" -> json(state.medication(id()))
                 "POST /api/medications" -> json(state.createMedication(request.decode()), HttpStatusCode.Created)
                 "PATCH /api/medications/{id}" -> json(state.updateMedication(id(), request.decode()))
                 "PATCH /api/medications/{id}/status" -> json(state.updateMedicationStatus(id(), request.decode()))
                 "PUT /api/medications/{id}/schedule" -> json(state.replaceSchedule(id(), request.decode()))
+                "GET /api/medications/{id}/schedule" -> json(state.currentSchedule(id()))
                 "GET /api/plan/daily" -> json(state.dailyPlan(organizerId(), date("date")))
                 "GET /api/plan/weekly" -> json(state.weeklyPlan(organizerId(), date("weekStart")))
                 "POST /api/users/me/organizers/{id}/preparations" ->
@@ -191,6 +193,21 @@ private class DemoState(empty: Boolean) {
 
     fun medications(): List<Medication> = medications.values.map(StoredMedication::summary)
 
+    fun medication(id: Long): MedicationDetails {
+        val stored = medications[id] ?: missing("Unknown demo medication")
+        val fields = stored.request
+        return MedicationDetails(
+            id, stored.summary.name, stored.summary.status, fields.doseAmount, fields.doseUnit, fields.startDate,
+            fields.endDate, fields.strengthValue, fields.strengthUnit, fields.form,
+            schedules[id]?.lastOrNull()?.userOrganizerId ?: medicationAssignments[id],
+        )
+    }
+
+    fun currentSchedule(id: Long): MedicationSchedule {
+        if (id !in medications) missing("Unknown demo medication")
+        return schedules[id]?.lastOrNull() ?: missing("No demo schedule")
+    }
+
     fun createMedication(request: CreateMedication): Medication {
         val fields = validateMedication(request)
         val medication = Medication(nextId++, fields.name, MedicationStatus.ACTIVE)
@@ -247,15 +264,19 @@ private class DemoState(empty: Boolean) {
         require(request.times.isNotEmpty() && request.times.all { timeFormat.matches(it.time) })
         require(request.times.map(ScheduleTime::time).toSet().size == request.times.size)
 
-        if (medicationId !in medicationAssignments) {
+        if (request.userOrganizerId != null) {
+            requireActiveAssignment(request.userOrganizerId)
+            medicationAssignments[medicationId] = request.userOrganizerId
+        } else if (medicationId !in medicationAssignments) {
             val organizer = assignments.values.firstOrNull { it.active && it.isDefault }
                 ?: assignments.values.firstOrNull(UserOrganizer::active)
             organizer?.let { medicationAssignments[medicationId] = it.id }
         }
         val versions = schedules.getOrPut(medicationId) { mutableListOf() }
         val latest = versions.lastOrNull()
+        val assignedOrganizerId = medicationAssignments[medicationId]
         if (latest != null && latest.validFrom == request.validFrom && latest.validUntil == request.validUntil &&
-            latest.days == request.days && latest.times == request.times
+            latest.days == request.days && latest.times == request.times && latest.userOrganizerId == assignedOrganizerId
         ) {
             return latest
         }
@@ -268,7 +289,7 @@ private class DemoState(empty: Boolean) {
         removePendingDoses(medicationId, request.validFrom)
 
         return MedicationSchedule(
-            nextId++, medicationId, request.validFrom, request.days, request.times, request.validUntil,
+            nextId++, medicationId, request.validFrom, request.days, request.times, request.validUntil, assignedOrganizerId,
         ).also(versions::add)
     }
 
@@ -378,12 +399,12 @@ private class DemoState(empty: Boolean) {
             for (medication in medications.values) {
                 val summary = medication.summary
                 if (summary.status != MedicationStatus.ACTIVE) continue
-                if (medicationAssignments[summary.id] != organizerId) continue
                 val request = medication.request
                 if (date < request.startDate || (request.endDate != null && date > request.endDate)) continue
                 val schedule = schedules[summary.id]?.lastOrNull {
                     date >= it.validFrom && (it.validUntil == null || date <= it.validUntil)
                 } ?: continue
+                if (schedule.userOrganizerId != organizerId) continue
                 if (weekday !in schedule.days) continue
 
                 for (time in schedule.times) {

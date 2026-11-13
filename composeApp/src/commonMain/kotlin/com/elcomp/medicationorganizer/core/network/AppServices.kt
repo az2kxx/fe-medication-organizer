@@ -13,6 +13,9 @@ import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.engine.mock.MockEngine
 import kotlin.time.Clock
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class AppServices private constructor(
     val settings: ApiSettings,
@@ -32,6 +35,7 @@ class AppServices private constructor(
     val profile: ProfileRepository? = demoSession?.let { ProfileRepository(api) }
     val organizers: OrganizerCatalogRepository? = demoSession?.let { OrganizerCatalogRepository(api) }
     val assignments: OrganizerAssignmentsRepository? = demoSession?.let { OrganizerAssignmentsRepository(api) }
+    val demoRevision: StateFlow<Long> = demoSession?.revision ?: MutableStateFlow(0L).asStateFlow()
 
     suspend fun signIn(request: LoginRequest) {
         session.signIn { auth.login(request) }

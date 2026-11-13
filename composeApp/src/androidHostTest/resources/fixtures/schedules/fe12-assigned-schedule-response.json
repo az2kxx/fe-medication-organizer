@@ -1,0 +1,12 @@
+{
+  "id": 25,
+  "medicationId": 12,
+  "validFrom": "2026-11-02",
+  "validUntil": "2026-11-30",
+  "days": [1, 3, 7],
+  "times": [
+    { "time": "08:00", "timeOfDay": "MORNING" },
+    { "time": "20:15", "timeOfDay": "EVENING" }
+  ],
+  "userOrganizerId": 101
+}
