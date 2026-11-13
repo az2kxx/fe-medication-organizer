@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="assignment_manage">Manage organizers</string>
+    <string name="assignment_list_title">My organizers</string>
+    <string name="assignment_details_title">Edit assignment</string>
+    <string name="assignment_back_list">Back to my organizers</string>
+    <string name="assignment_add">Add an organizer</string>
+    <string name="assignment_name">Organizer name</string>
+    <string name="assignment_name_optional">Organizer name (optional)</string>
+    <string name="assignment_name_too_long">Use 32 characters or fewer for the organizer name.</string>
+    <string name="assignment_unnamed">Unnamed organizer</string>
+    <string name="assignment_model">Model %1$s</string>
+    <string name="assignment_selected_for_plan">Plan for %1$s</string>
+    <string name="assignment_in_use">In use</string>
+    <string name="assignment_active">Active</string>
+    <string name="assignment_inactive">Inactive</string>
+    <string name="assignment_default">Default</string>
+    <string name="assignment_use">Use this organizer</string>
+    <string name="assignment_edit">Edit assignment</string>
+    <string name="assignment_make_default">Set as default</string>
+    <string name="assignment_activate">Activate organizer</string>
+    <string name="assignment_deactivate">Deactivate organizer</string>
+    <string name="assignment_save_name">Save name</string>
+    <string name="assignment_remove">Remove assignment</string>
+    <string name="assignment_remove_message">Remove the assignment for “%1$s”? Recorded intake will stay in your history.</string>
+    <string name="assignment_cancel">Cancel</string>
+    <string name="assignment_conflict">This change is unavailable in the current state. Check the organizer and try again.</string>
+    <string name="assignment_load_failed">Could not load your organizers.</string>
+    <string name="assignment_save_failed">Could not save the assignment change.</string>
+    <string name="assignment_remove_failed">Could not remove the assignment.</string>
+    <string name="assignment_list_empty_title">No assigned organizers</string>
+    <string name="assignment_list_empty_message">Add an organizer from the model catalog.</string>
+    <string name="assignment_no_selection_title">No active organizer</string>
+    <string name="assignment_no_selection_message">Add an organizer or activate one of your existing organizers.</string>
+    <string name="assignment_missing_title">Assignment not found</string>
+    <string name="assignment_missing_message">Go back to your organizers and choose an available assignment.</string>
+    <string name="assignment_preparation_for">Preparing “%1$s”</string>
+    <string name="assignment_preparation_load_failed">Could not load preparation for this organizer.</string>
+    <string name="assignment_preparation_in_progress">Preparation in progress</string>
+    <string name="assignment_preparation_ready">Organizer ready</string>
+</resources>

@@ -101,7 +101,13 @@ Testy oraz kod funkcji mogą tworzyć `AppServices.create(ApiSettings.Mock())` l
 
 W `NORMAL` zaloguj fikcyjne konto przez `services.signIn(LoginRequest(...))` przed odczytem planu z `services.demo`. Dla `DEMO_DATE` (`2026-11-02`) i `DEMO_ORGANIZER_ID` (`1`) dodaj lek, przypisz mu dawkę o 20:00 i odczytaj plan ponownie. Przygotuj przegródki zgodnie z planem, oznacz przyjęcie jednej dawki i pominięcie drugiej. Kolejny odczyt historii pokaże obie deklaracje.
 
-Wylogowanie przywraca roboczy plan, przygotowanie i historię do stanu początkowego. Konto utworzone w bieżącej instancji `AppServices` zachowuje profil i preferencje do ponownego zalogowania w tej instancji. Preferencje wbudowanego konta `alex@example.com` host zapisuje na urządzeniu. `resetDemo()` przywraca początkową listę kont i domyślne preferencje. Instancję utworzoną bezpośrednio w teście zwolnij po sprawdzeniu przez `close()`.
+Wylogowanie przywraca przypisania kasetek, roboczy plan, przygotowanie i historię do stanu początkowego. Konto utworzone w bieżącej instancji `AppServices` zachowuje profil i preferencje do ponownego zalogowania w tej instancji. Preferencje wbudowanego konta `alex@example.com` host zapisuje na urządzeniu. `resetDemo()` przywraca początkową listę kont i domyślne preferencje. Instancję utworzoną bezpośrednio w teście zwolnij po sprawdzeniu przez `close()`.
+
+### Przypisania kasetek w demo
+
+1. Na symulatorze iOS uruchom `iosApp` w domyślnym `MOCK` i wybierz **Wypróbuj demo**. Otwórz **Kasetka → Zarządzaj kasetkami**. Użyj zapasowej kasetki i sprawdź jej nazwę oraz podsumowanie układu w zakładce Kasetka. W **Przygotowaniu kasetki** sprawdź nazwę tego samego przypisania.
+2. Wróć do zarządzania, wybierz znowu pierwszą kasetkę, a zapasową nazwij inaczej i ustaw jako domyślną. Sprawdź, że tylko zapasowa ma oznaczenie domyślnej, a bieżący wybór wskazuje pierwszą kasetkę.
+3. Wybierz **Wybierz model kasetki**, otwórz model i wybierz **Wybierz ten model**. Wpisz fikcyjną nazwę i kliknij **Przypisz kasetkę**. Wróć do zarządzania, zdezaktywuj nowe przypisanie, aktywuj je ponownie, a następnie usuń je przez **Usuń przypisanie**. [Kontrakt przypisań](docs/api-contract.md#robocze-przypisania-kasetek-w-mock)
 
 ## Praca nad zadaniami
 

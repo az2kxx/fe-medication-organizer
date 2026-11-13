@@ -317,7 +317,8 @@ class MainActivityTest {
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf("Pon. południe, Poniedziałek, Południe")))
         composeRule.onNodeWithTag("organizer-select").performScrollTo().assertIsEnabled().performClick()
         composeRule.onNodeWithTag("organizer-confirm").assertExists()
-        composeRule.onNodeWithTag("organizer-assign-unavailable").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("organizer-assignment-name").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("organizer-assign").performScrollTo().assertIsEnabled()
 
         pressSystemBack()
         composeRule.onNodeWithTag("organizer-details").assertExists()
@@ -371,6 +372,78 @@ class MainActivityTest {
         composeRule.onNodeWithText("Compartment layout").assertExists()
         composeRule.onNodeWithTag("organizer-compartment-204")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf("noc, Night")))
+    }
+
+    @Test
+    fun organizerSelectionIsIndependentOfDefaultAndRestoresAcrossRecreation() {
+        startFromWelcome()
+        composeRule.onNodeWithTag("tab-organizer").performClick()
+        assertEventuallyDisplayed(hasTestTag("selected-assignment-1"))
+        openAssignment(101)
+        composeRule.onNodeWithTag("assignment-set-default").performScrollTo().performClick()
+        waitForNode(hasText("Aktywna · Domyślna"))
+
+        pressSystemBack()
+        pressSystemBack()
+        assertEventuallyDisplayed(hasTestTag("selected-assignment-1"))
+        openAssignments()
+        composeRule.onNodeWithTag("assignment-use-101").performScrollTo().performClick()
+        assertEventuallyDisplayed(hasTestTag("selected-assignment-101"))
+        waitForNode(hasText("Kod produktu: ELC-7X3"))
+        composeRule.onNodeWithText("Liczba przegródek: 21").assertExists()
+
+        composeRule.activityRule.scenario.recreate()
+        assertEventuallyDisplayed(hasTestTag("selected-assignment-101"))
+        openPreparation()
+        assertEventuallyDisplayed(hasTestTag("preparation-assignment-101"))
+
+        composeRule.onNodeWithTag("tab-today").performClick()
+        assertEventuallyDisplayed(hasTestTag("plan-assignment-101"))
+        openSettings()
+        waitForNode(hasTestTag("preferences-simplified"))
+        composeRule.onNodeWithTag("preferences-simplified").performScrollTo().performClick()
+        composeRule.onNodeWithTag("preferences-save").performScrollTo().performClick()
+        waitForNode(hasTestTag("preferences-saved"))
+        pressSystemBack()
+        waitForNode(hasText("Brak oczekujących dawek"))
+        composeRule.onNodeWithText("08:00").assertDoesNotExist()
+    }
+
+    @Test
+    fun organizerAssignmentCanBeNamedRenamedDeactivatedAndRemoved() {
+        startFromWelcome()
+        composeRule.onNodeWithTag("tab-organizer").performClick()
+        composeRule.onNodeWithTag("organizer-open-catalog").performScrollTo().performClick()
+        waitForNode(hasTestTag("organizer-model-3"))
+        composeRule.onNodeWithTag("organizer-model-3").performScrollTo().performClick()
+        waitForNode(hasTestTag("organizer-select"))
+        composeRule.onNodeWithTag("organizer-select").performScrollTo().performClick()
+        replaceField("organizer-assignment-name", "  Kasetka dzienna  ")
+        composeRule.onNodeWithTag("organizer-assign").performScrollTo().performClick()
+        assertEventuallyDisplayed(hasTestTag("selected-assignment-102"))
+        waitForNode(hasText("Kod produktu: ELC-1X4"))
+        composeRule.onNodeWithText("Kasetka dzienna").assertExists()
+        composeRule.onNodeWithText("Liczba przegródek: 4").assertExists()
+
+        openAssignment(102)
+        replaceField("assignment-name", "Kasetka podróżna")
+        composeRule.onNodeWithTag("assignment-save-name").performScrollTo().performClick()
+        waitForNode(hasText("Kasetka podróżna"))
+        composeRule.onNodeWithTag("assignment-toggle-active").performScrollTo().performClick()
+        waitForNode(hasText("Nieaktywna"))
+
+        pressSystemBack()
+        composeRule.onNodeWithTag("assignment-use-102").assertDoesNotExist()
+        pressSystemBack()
+        assertEventuallyDisplayed(hasTestTag("selected-assignment-1"))
+        openAssignment(102)
+        composeRule.onNodeWithTag("assignment-remove").performScrollTo().performClick()
+        composeRule.onNodeWithTag("assignment-remove-confirm").performClick()
+        assertEventuallyDisplayed(hasTestTag("screen-organizer-assignments"))
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.onAllNodes(hasTestTag("assignment-102"))
+                .fetchSemanticsNodes(atLeastOneRootRequired = false).isEmpty()
+        }
     }
 
     @Test
@@ -457,8 +530,21 @@ class MainActivityTest {
     }
 
     private fun openPreparation() {
+        waitForNode(hasTestTag("organizer-open-preparation"))
         composeRule.onNodeWithTag("organizer-open-preparation").performScrollTo().performClick()
         composeRule.onNodeWithTag("screen-preparation").assertIsDisplayed()
+    }
+
+    private fun openAssignments() {
+        composeRule.onNodeWithTag("organizer-open-assignments").performScrollTo().performClick()
+        assertEventuallyDisplayed(hasTestTag("screen-organizer-assignments"))
+    }
+
+    private fun openAssignment(id: Long) {
+        openAssignments()
+        waitForNode(hasTestTag("assignment-edit-$id"))
+        composeRule.onNodeWithTag("assignment-edit-$id").performScrollTo().performClick()
+        assertEventuallyDisplayed(hasTestTag("screen-organizer-assignment"))
     }
 
     private fun pressSystemBack() {
