@@ -38,6 +38,14 @@ Komendy uruchomienia i wymagane SDK są w README. [Uruchomienie projektu](../REA
 
 Zapis preferencji należy do zalogowanej części aplikacji. Wyjście z Ustawień nie anuluje zapisu ani aktualizacji wspólnego stanu konta. Po powrocie formularz pozostaje zablokowany do zakończenia operacji. Odpowiedzi zapisu profilu i preferencji są scalane z bieżącym stanem konta, aby równoległe zmiany nie nadpisywały pozostałych danych.
 
+## Edytor harmonogramu FE-12
+
+`features/schedules` zawiera wydzielony edytor oraz niezależny model formularza z walidacją. `ScheduleEditor` przyjmuje `medicationId`, opcjonalny początkowy `ReplaceSchedule`, `onSave: suspend (Long, ReplaceSchedule) -> Unit`, `onSaved`, `onCancel` i opcjonalną flagę `isSaving`. Początkowy harmonogram jest pełnym snapshotem edytowanej reguły; nowy formularz zaczyna z pustymi datami i dniami. Edytor zachowuje wszystkie wiersze i wybory przy odtworzeniu stanu Compose. Zmiana ID leku lub początkowego harmonogramu tworzy nowy stan edytora.
+
+Zapis przekazuje kompletny, zwalidowany payload jednokrotnie. Pola, dodawanie/usuwanie godzin i anulowanie są zablokowane na czas zapisu. Błąd `ApiException` pozostawia formularz do ponowienia; `onSaved` jest wywoływany po sukcesie. Pory dnia wybiera użytkownik, łącznie z brakiem przypisanej pory. Klient nie wyznacza pory z godziny ani nie przypisuje samodzielnie przegródek. [Walidacja i roboczy kontrakt](api-contract.md#zastąpienie-harmonogramu-put-apimedications12schedule)
+
+Host dostarcza kontekst leku i ograniczoną wysokość: edytor sam obsługuje przewijanie i klawiaturę. Przy wpięciu po FE-11 powinien dostać osobny kontener ekranu, bez zewnętrznego `verticalScroll`. Host odpowiada też za operację zapisu przetrzymującą zmiany ekranu, przekazanie wspólnej flagi `isSaving` i odświeżenie planu po sukcesie. Przykładowa implementacja callbacka w `MOCK` wywoła `requireNotNull(services.demo).replaceSchedule(medicationId, request)`. Edytor nie przelicza historii ani wystąpień dawek. Wpięcie w nawigację i leki oraz odświeżenie planu pozostają do wykonania po FE-11; ten wydzielony zakres nie zamyka całego [FE-12](https://github.com/az2kxx/fe-medication-organizer/issues/12).
+
 ## Obsługa sesji
 
 Rejestracja tworzy konto i kieruje do logowania z uzupełnionym adresem e-mail. Dopiero logowanie otwiera sesję. Klient wylicza jej wygaśnięcie z `expiresInSeconds` i dodaje `Authorization: Bearer` do żądań wymagających sesji. W trybie `MOCK` fikcyjny token trafia wyłącznie do lokalnego transportu.

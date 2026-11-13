@@ -226,6 +226,12 @@ Edycja przelicza dawki `PENDING` od daty demo. Zawieszenie lub dezaktywacja usuw
 
 ### Zastąpienie harmonogramu `PUT /api/medications/12/schedule`
 
+Wydzielony edytor FE-12 korzysta z istniejącego `ReplaceSchedule`. `days` zawiera co najmniej jeden dzień 1–7, poniedziałek=1. `times` zawiera co najmniej jedną godzinę, z opcjonalnym `timeOfDay`. Formularz przyjmuje `8:00` i `08:00`, a wysyła `08:00`; minuty wymagają dwóch cyfr. Powtórzenie tej samej znormalizowanej godziny jest błędem wszystkich kolidujących wierszy, także przy różnych porach dnia. Pory dnia nie są wyliczane z godzin.
+
+`validFrom` jest wymaganą istniejącą datą `RRRR-MM-DD`. `validUntil` jest opcjonalne, może być równe początkowi i nie może go poprzedzać. Pusty koniec mapuje się na `null`; istniejący serializer pomija domyślne pola `null`. PUT zastępuje cały zestaw reguł, a formularz zachowuje pozostałe dni i godziny podczas edycji. Niepuste `validUntil` i wszystkie reguły są sprawdzane w [fixture żądania](../composeApp/src/androidHostTest/resources/fixtures/schedules/fe12-replace-schedule-request.json) i [odpowiedzi](../composeApp/src/androidHostTest/resources/fixtures/schedules/fe12-replace-schedule-response.json).
+
+To nadal roboczy kontrakt `MOCK`, bez potwierdzonej implementacji harmonogramu w backendzie. Sam edytor oddaje payload callbackowi hosta. Podłączenie do leków oraz odświeżenie planu czekają na FE-11. Test mocka potwierdza zastąpienie przyszłych dawek i zachowanie wcześniejszych potwierdzeń; produkcyjne generowanie dawek pozostaje po stronie backendu.
+
 Żądanie
 
 ```json
