@@ -1,0 +1,10 @@
+{
+  "name": "Przykładowy lek",
+  "doseAmount": 1,
+  "doseUnit": "TABLET",
+  "startDate": "2026-11-02",
+  "endDate": null,
+  "strengthValue": null,
+  "strengthUnit": null,
+  "form": null
+}

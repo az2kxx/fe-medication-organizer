@@ -1,0 +1,14 @@
+[
+  {
+    "id": 50,
+    "medicationId": 12,
+    "medicationName": "Lek demonstracyjny",
+    "userOrganizerId": 1,
+    "compartmentDefinitionId": 8,
+    "scheduledDate": "2026-11-02",
+    "scheduledTime": "08:00",
+    "doseAmountSnapshot": 0.25,
+    "doseUnitSnapshot": "CAPSULE",
+    "status": "MISSED"
+  }
+]

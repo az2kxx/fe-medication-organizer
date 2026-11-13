@@ -1,0 +1,7 @@
+{
+  "timestamp": "2026-11-02T09:00:00Z",
+  "status": 409,
+  "error": "Conflict",
+  "message": "Check every required compartment before completing preparation",
+  "path": "/api/preparations/30/complete"
+}

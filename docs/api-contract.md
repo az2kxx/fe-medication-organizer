@@ -77,9 +77,20 @@ Fixture testowe korzystają z fikcyjnych danych. Ścieżki prowadzą do JSON uż
 
 ### Błędy
 
-Przy próbie rejestracji zajętego adresu e-mail serwis zgłasza `409 Conflict`. Kształt JSON błędów, odpowiedzi na błędne logowanie i szczegóły walidacji wymagają weryfikacji. Przykładowe `400`, `401`, `403`, `404`, `409` i `500` w mockach są scenariuszami roboczymi. [Sprawdzenie adresu e-mail](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/users/UserService.java#L26-L33)
+Przy próbie rejestracji zajętego adresu e-mail serwis zgłasza `409 Conflict`. Odpowiedź na błędne logowanie i szczegóły walidacji wymagają weryfikacji. [Sprawdzenie adresu e-mail](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/users/UserService.java#L26-L33)
 
-Warstwa transportu zgłasza `ApiException` z kategorią `error`, lokalnym komunikatem oraz `statusCode`, jeśli serwer odpowiedział. `error.retryable` wskazuje, że przyczyna błędu może ustąpić. Transport wysyła każde żądanie jednokrotnie. Kod funkcji decyduje o ewentualnym ponowieniu.
+Robocze fixture błędów używają pól `timestamp`, `status`, `error`, `message` i `path` z `ErrorResponse` na gałęzi backendu `feat/exceptions`. Format pozostaje propozycją do czasu scalenia i weryfikacji odpowiedzi. [ErrorResponse](https://github.com/Matt1479/medication-organizer/blob/feat/exceptions/src/main/java/com/matt1479/medicationorganizer/exceptions/dto/ErrorResponse.java)
+
+| Status | Roboczy przykład odpowiedzi |
+| --- | --- |
+| `400` | [Nieprawidłowe żądanie](../composeApp/src/androidHostTest/resources/fixtures/demo-contract/error-400-response.json) |
+| `401` | [Brak ważnej sesji](../composeApp/src/androidHostTest/resources/fixtures/demo-contract/error-401-response.json) |
+| `403` | [Brak uprawnień](../composeApp/src/androidHostTest/resources/fixtures/demo-contract/error-403-response.json) |
+| `404` | [Brak zasobu](../composeApp/src/androidHostTest/resources/fixtures/demo-contract/error-404-response.json) |
+| `409` | [Konflikt stanu](../composeApp/src/androidHostTest/resources/fixtures/demo-contract/error-409-response.json) |
+| `500` | [Błąd serwera](../composeApp/src/androidHostTest/resources/fixtures/demo-contract/error-500-response.json) |
+
+Warstwa transportu mapuje status HTTP na kategorię i lokalny komunikat `ApiException`. Działa również przy pustym body lub innym formacie odpowiedzi. `error.retryable` wskazuje, że przyczyna błędu może ustąpić. Transport wysyła każde żądanie jednokrotnie. Kod funkcji decyduje o ewentualnym ponowieniu.
 
 ## Robocze trasy do mocków
 
@@ -178,6 +189,14 @@ Skrócona odpowiedź `201 Created`
 }
 ```
 
+Robocze DTO przyjmuje opcjonalne `form` o wartościach `TABLET`, `CAPSULE`, `LIQUID` i `OTHER`. `status` w odpowiedzi ma typ `MedicationStatus` o wartościach `ACTIVE`, `SUSPENDED` i `INACTIVE`. [Fixture dodawania leku z postacią](../composeApp/src/androidHostTest/resources/fixtures/demo-contract/medication-create-request.json)
+
+### Edycja leku i zmiana statusu w MOCK
+
+W `services.demo` metody `updateMedication` i `updateMedicationStatus` wywołują obie trasy PATCH. `PATCH /api/medications/{id}` przyjmuje pełny formularz. `name`, `doseAmount`, `doseUnit` i `startDate` są wymagane. Klient wysyła jawne `null`, aby wyczyścić `endDate`, `strengthValue`, `strengthUnit` lub `form`. Mock również traktuje pominięcie pola opcjonalnego jako wyczyszczenie. `PATCH /api/medications/{id}/status` przyjmuje obiekt z polem `status`. Obie trasy zwracają `200` oraz skrót leku z polami `id`, `name` i `status`. Przed integracją trzeba potwierdzić pola żądań i odpowiedzi, znaczenie `null` i pominiętych pól oraz dozwolone przejścia statusów. [Fixture edycji](../composeApp/src/androidHostTest/resources/fixtures/demo-contract/medication-update-request.json) · [Fixture czyszczenia pól](../composeApp/src/androidHostTest/resources/fixtures/demo-contract/medication-update-clear-fields-request.json) · [Fixture zmiany statusu](../composeApp/src/androidHostTest/resources/fixtures/demo-contract/medication-status-request.json)
+
+Edycja przelicza dawki `PENDING` od daty demo. Zawieszenie lub dezaktywacja usuwa takie dawki z planu, a ponowna aktywacja pozwala je wygenerować. Potwierdzone dawki zachowują zapisane dane, a historia pozostaje dostępna.
+
 ### Zastąpienie harmonogramu `PUT /api/medications/12/schedule`
 
 Żądanie
@@ -257,6 +276,10 @@ Odpowiedź `200 OK`
 ```
 
 `8` identyfikuje definicję przegródki, a `100` zapis postępu tej przegródki w sesji. `PREPARED` opisuje przygotowanie, a `TAKEN` deklarację dotyczącą konkretnej dawki.
+
+### Puste listy i dodatkowe stany
+
+Roboczy plan dnia zwraca tablicę. Dzień bez dawek zwraca `[]`. DTO odczytują też `MISSED` w planie i `CANCELLED` w sesji przygotowania. Przykłady sprawdzają dekodowanie. Reguła nadawania `MISSED` i operacja anulowania przygotowania wymagają uzgodnienia. [Pusty plan](../composeApp/src/androidHostTest/resources/fixtures/demo-contract/daily-plan-empty-response.json) · [Plan ze statusem MISSED](../composeApp/src/androidHostTest/resources/fixtures/demo-contract/daily-plan-missed-response.json) · [Sesja CANCELLED](../composeApp/src/androidHostTest/resources/fixtures/demo-contract/preparation-cancelled-response.json)
 
 ## Do uzgodnienia z backendem
 

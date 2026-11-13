@@ -1,0 +1,9 @@
+{
+  "name": "Lek demonstracyjny",
+  "doseAmount": 0.25,
+  "doseUnit": "CAPSULE",
+  "startDate": "2026-11-02",
+  "strengthValue": 500,
+  "strengthUnit": "mg",
+  "form": "CAPSULE"
+}
