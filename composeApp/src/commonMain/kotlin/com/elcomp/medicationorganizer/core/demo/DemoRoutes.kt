@@ -38,10 +38,17 @@ internal class DemoRoutes(private val empty: Boolean = false) {
 
         return try {
             when ("${request.method.value} $route") {
-                "GET /api/organizer-models" -> json(
-                    (query["productCode"]?.let(DemoCatalog::findByProductCode) ?: DemoCatalog.models)
-                        .map(OrganizerModelDetails::toSummary),
-                )
+                "GET /api/organizer-models" -> {
+                    val productCode = query["productCode"]
+                    val qrCode = query["qrCode"]
+                    require(productCode == null || qrCode == null)
+                    val models = when {
+                        productCode != null -> DemoCatalog.findByProductCode(productCode)
+                        qrCode != null -> DemoCatalog.findByQrCode(qrCode)
+                        else -> DemoCatalog.models
+                    }
+                    json(models.map(OrganizerModelDetails::toSummary))
+                }
                 "GET /api/organizer-models/{id}" -> json(DemoCatalog.model(id()) ?: missing("Unknown demo model"))
                 "GET /api/medications" -> json(state.medications())
                 "POST /api/medications" -> json(state.createMedication(request.decode()), HttpStatusCode.Created)

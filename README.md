@@ -25,7 +25,7 @@ Otwórz katalog repozytorium w Android Studio, ustaw JDK 21 jako Gradle JDK i ws
 ./gradlew :androidApp:assembleDebug :androidApp:testDebugUnitTest :composeApp:testAndroidHostTest
 ```
 
-APK pojawi się w `androidApp/build/outputs/apk/debug/`. Testy `androidApp` obejmują rejestrację i logowanie w demo, walidację profilu, izolację kont po wylogowaniu oraz odtworzenie preferencji demo po ponownym utworzeniu aktywności. Sprawdzają też wyszukiwanie modelu kasetki po kodzie, układ przegródek i blokadę wyboru modelu nieaktywnego, nawigację w PL i EN oraz dostęp do kontrolek przy skali systemowej 200%. Testy hosta w `composeApp` sprawdzają kontrakt auth, sesję, transport oraz przebieg demo.
+APK pojawi się w `androidApp/build/outputs/apk/debug/`. Testy `androidApp` obejmują rejestrację i logowanie w demo, walidację profilu, izolację kont po wylogowaniu oraz odtworzenie preferencji demo po ponownym utworzeniu aktywności. Sprawdzają też komunikaty skanera przy braku aparatu i odmowie uprawnienia, wyszukiwanie modelu kasetki po kodzie, układ przegródek i blokadę wyboru modelu nieaktywnego, nawigację w PL i EN oraz dostęp do kontrolek przy skali systemowej 200%. Testy hosta w `composeApp` sprawdzają kontrakt auth, sesję, transport oraz przebieg demo.
 
 ## iOS
 
@@ -102,6 +102,10 @@ Testy oraz kod funkcji mogą tworzyć `AppServices.create(ApiSettings.Mock())` l
 W `NORMAL` zaloguj fikcyjne konto przez `services.signIn(LoginRequest(...))` przed odczytem planu z `services.demo`. Dla `DEMO_DATE` (`2026-11-02`) i `DEMO_ORGANIZER_ID` (`1`) dodaj lek, przypisz mu dawkę o 20:00 i odczytaj plan ponownie. Przygotuj przegródki zgodnie z planem, oznacz przyjęcie jednej dawki i pominięcie drugiej. Kolejny odczyt historii pokaże obie deklaracje.
 
 Wylogowanie przywraca roboczy plan, przygotowanie i historię do stanu początkowego. Konto utworzone w bieżącej instancji `AppServices` zachowuje profil i preferencje do ponownego zalogowania w tej instancji. Preferencje wbudowanego konta `alex@example.com` host zapisuje na urządzeniu. `resetDemo()` przywraca początkową listę kont i domyślne preferencje. Instancję utworzoną bezpośrednio w teście zwolnij po sprawdzeniu przez `close()`.
+
+### Skaner QR
+
+**Kasetka → Dodaj kasetkę** otwiera aparat. Skaner działa na urządzeniu z aparatem lub na emulatorze Androida z kamerą wirtualną. Symulator iOS nie ma aparatu, więc pokazuje komunikat o niedostępnym aparacie i przejście do ręcznego wyboru modelu. Kody do zeskanowania w `MOCK` są w [docs/qr-demo](docs/qr-demo/README.md). Odmowę uprawnienia sprawdzisz, wyłączając dostęp do aparatu w ustawieniach aplikacji.
 
 ## Praca nad zadaniami
 
