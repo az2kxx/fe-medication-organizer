@@ -4,6 +4,8 @@ import com.elcomp.medicationorganizer.core.network.ApiClient
 import com.elcomp.medicationorganizer.features.organizers.data.dto.OrganizerModelDetails
 import io.ktor.http.encodeURLQueryComponent
 import kotlin.time.Instant
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonPrimitive
 
@@ -71,11 +73,16 @@ data class CreateMedication(
     val name: String,
     val doseAmount: JsonPrimitive,
     val doseUnit: String,
-    val startDate: String = DEMO_DATE,
+    @OptIn(ExperimentalSerializationApi::class)
+    @EncodeDefault val startDate: String = DEMO_DATE,
     val endDate: String? = null,
     val strengthValue: JsonPrimitive? = null,
     val strengthUnit: String? = null,
+    val form: MedicationForm? = null,
 )
+
+@Serializable
+enum class MedicationForm { TABLET, CAPSULE, LIQUID, OTHER }
 
 @Serializable
 data class Medication(val id: Long, val name: String, val status: String)

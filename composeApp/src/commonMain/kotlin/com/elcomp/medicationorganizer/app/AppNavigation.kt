@@ -42,6 +42,8 @@ import com.elcomp.medicationorganizer.core.ui.AppEmptyState
 import com.elcomp.medicationorganizer.core.ui.AppErrorState
 import com.elcomp.medicationorganizer.core.ui.AppLoadingState
 import com.elcomp.medicationorganizer.core.ui.AppSubmitButton
+import com.elcomp.medicationorganizer.features.medications.presentation.AddMedicationContent
+import com.elcomp.medicationorganizer.features.medications.presentation.MedicationListContent
 import com.elcomp.medicationorganizer.features.organizers.data.OrganizerCatalogRepository
 import com.elcomp.medicationorganizer.features.organizers.presentation.OrganizerCatalogFlow
 import com.elcomp.medicationorganizer.features.profile.data.AccessibilityPreferences
@@ -57,6 +59,7 @@ private enum class Destination(val tag: String, val title: StringResource, val t
     Organizer("screen-organizer", Res.string.navigation_organizer, MainTab.Organizer),
     OrganizerCatalog("screen-organizer-catalog", Res.string.organizer_catalog_title, MainTab.Organizer),
     Medications("screen-medications", Res.string.navigation_medications, MainTab.Medications),
+    AddMedication("screen-medication-add", Res.string.medication_add_title, MainTab.Medications),
     Preparation("screen-preparation", Res.string.navigation_preparation, MainTab.Organizer),
     History("screen-history", Res.string.navigation_history, MainTab.History),
     Settings("screen-settings", Res.string.navigation_settings, MainTab.Today),
@@ -96,6 +99,7 @@ internal fun AppNavigation(
         Destination.Today -> null
         Destination.Preparation, Destination.OrganizerCatalog -> Destination.Organizer
         Destination.Profile -> Destination.Settings
+        Destination.AddMedication -> Destination.Medications
         else -> Destination.Today
     }
     BackHandler(enabled = backDestination != null) {
@@ -172,10 +176,21 @@ internal fun AppNavigation(
                                 "preparation-back-organizer",
                             ) { navigate(Destination.Organizer) }
                         }
-                        Destination.Medications -> AppEmptyState(
-                            title = stringResource(Res.string.medications_empty_title),
-                            message = stringResource(Res.string.medications_empty_message),
-                        )
+                        Destination.Medications -> if (demo != null) {
+                            MedicationListContent(demo) { navigate(Destination.AddMedication) }
+                        } else {
+                            AppEmptyState(
+                                title = stringResource(Res.string.medications_empty_title),
+                                message = stringResource(Res.string.medications_empty_message),
+                            )
+                        }
+                        Destination.AddMedication -> if (demo != null) {
+                            AddMedicationContent(
+                                repository = demo,
+                                onSaved = { navigate(Destination.Medications) },
+                                onBack = { navigate(Destination.Medications) },
+                            )
+                        }
                         Destination.History -> AppEmptyState(
                             title = stringResource(Res.string.history_empty_title),
                             message = stringResource(Res.string.history_empty_message),

@@ -48,6 +48,12 @@ Polecenie sprawdza kompilację aplikacji i frameworka dla symulatora. Do testu s
 4. W Ustawieniach włącz tryb uproszczony i wysoki kontrast, wybierz tekst 200% i zapisz. Na ekranie Dzisiaj sprawdź dawkę demo o 08:00 i główny przycisk do kasetki. Zamknij aplikację, uruchom ją ponownie i wybierz **Wypróbuj demo**. Sprawdź ekran Dzisiaj i zapisane wartości w Ustawieniach.
 5. Powtórz przebieg w PL i EN. Zwiększ tekst także w ustawieniach systemowych i sprawdź, czy formularz, główne przyciski i cztery zakładki pozostają dostępne. Z VoiceOver sprawdź kolejność fokusu, etykiety pól, odczyt wyboru skali, przełączników, zakładek i błędu przy polu. W symulatorze sprawdzisz etykiety i role przez Accessibility Inspector. [Testowanie dostępności w aplikacji](https://developer.apple.com/documentation/accessibility/performing-accessibility-testing-for-your-app)
 
+### Dodanie leku w demo na iOS
+
+1. Uruchom `iosApp` na symulatorze z Xcode w domyślnym `MOCK`. Wybierz **Wypróbuj demo → Leki → Dodaj lek**.
+2. Wpisz fikcyjną nazwę „Lek testowy”, ilość dawki `0,5`, jednostkę `tabletki` i datę początku `2026-02-30`. Wybierz **Zapisz lek** i sprawdź komunikat przy dacie. Zmień początek na `2026-11-02`, wpisz `2026-11-01` jako datę końca i spróbuj zapisać ponownie, by sprawdzić komunikat o kolejności dat.
+3. Ustaw koniec na `2026-11-03`, zapisz i sprawdź, czy „Lek testowy” pojawił się na liście. Otwórz inną zakładkę i wróć do Leków, aby potwierdzić ponowny odczyt. [Żądanie i odpowiedź demo](docs/api-contract.md#dodanie-leku-post-apimedications)
+
 ## Tryby pracy
 
 Aplikacja domyślnie uruchamia się w `MOCK` ze scenariuszem `NORMAL`. Interfejs pokazuje aktywny tryb oraz nazwę scenariusza, jeśli wybrano inny niż domyślny. W `MOCK` możesz wypróbować fikcyjne konto lub użyć formularzy rejestracji i logowania. W `LIVE` **Zacznij** otwiera logowanie do wskazanego backendu. Leki, plan, przygotowanie i historia są dostępne w roboczym repozytorium `MOCK`. [Kontrakt API](docs/api-contract.md)
