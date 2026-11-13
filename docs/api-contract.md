@@ -187,14 +187,19 @@ Przykłady pochodzą z projektu kontraktu i zawierają fikcyjne dane. Skrócone 
 
 ### Dodanie leku `POST /api/medications`
 
+Lista i dodawanie działają w `MOCK` i wymagają ważnej sesji. `GET /api/medications` zwraca `200` z tablicą skrótów zawierających `id`, `name` i `status`. Po zapisie klient odświeża listę. Pełne szczegóły i edycja mają osobne trasy w projekcie kontraktu.
+
+W formularzu wymagane są nazwa, dodatnia ilość dawki, jej jednostka i data początku. Data końca jest opcjonalna i może być równa dacie początku. Moc leku jest opcjonalna i wymaga razem wartości oraz jednostki. `form` jest opcjonalne w `MOCK`. Dostępne wartości to `TABLET`, `CAPSULE`, `LIQUID` i `OTHER`. Klient przyjmuje przecinek lub kropkę w liczbie dziesiętnej, np. `0,5`, i wysyła ją jako liczbę JSON `0.5`. Nieprawidłowy zapis żądania daje `400`. [Fixture żądania](../composeApp/src/androidHostTest/resources/fixtures/medications/fe11-create-medication-request.json) · [Fixture odpowiedzi](../composeApp/src/androidHostTest/resources/fixtures/medications/fe11-create-medication-response.json)
+
 Żądanie
 
 ```json
 {
   "name": "Lek demonstracyjny",
+  "form": "TABLET",
   "strengthValue": 500,
   "strengthUnit": "mg",
-  "doseAmount": 1,
+  "doseAmount": 0.5,
   "doseUnit": "TABLET",
   "startDate": "2026-10-30",
   "endDate": null
@@ -307,7 +312,7 @@ Roboczy plan dnia zwraca tablicę. Dzień bez dawek zwraca `[]`. DTO odczytują 
 
 - Kształt odpowiedzi katalogu z sekcji o katalogu: lista bez przegródek, pusta tablica dla nieznanego kodu, obecność modeli nieaktywnych na liście i porównanie kodu bez rozróżniania wielkości liter.
 - Pełne odpowiedzi profilu, preferencji, przypisania kasetki, planu dnia i tygodnia, historii oraz sesji przygotowania. Dla przypisań trzeba też potwierdzić pełny zestaw pól `PATCH`, zasady ustawiania domyślnej kasetki i usunięcie z zachowaniem historii. Potrzebujemy także formatu pustych list, wyniku wyszukiwania QR i odpowiedzi przy braku bieżącej sesji.
-- Dozwolone pola mutacji bez przykładów, w tym `form` przy dodawaniu leku. W modelu danych jest `form`, a skrócone żądanie nie pokazuje tego pola. Trzeba potwierdzić wymagane i opcjonalne pola, dopuszczalne wartości `timeOfDay` oraz numerację dni tygodnia.
+- Wymagane i opcjonalne pola mutacji, w tym `form` przy dodawaniu leku, pozostają do potwierdzenia z backendem. Trzeba też potwierdzić dopuszczalne wartości `timeOfDay` oraz numerację dni tygodnia.
 - Reguły przypisania dawek do kasetki i przegródki oraz kształt odpowiedzi dla dawki bez przypisanej przegródki. Plan powinien przekazywać dane potrzebne kreatorowi i widokowi kasetki.
 - Reguła nadawania `MISSED`, zachowanie lokalnego czasu w razie zmiany strefy lub przejścia na czas letni i zimowy oraz obsługa ponownego zgłoszenia lub korekty intake.
 - Lista wymaganych przegródek do zakończenia przygotowania, sposób wskazania braków przy `409`, format błędów, kody domenowe i błędy poszczególnych pól walidacji.

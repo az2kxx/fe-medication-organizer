@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="medication_add_title">Add medication</string>
+    <string name="medications_list_failed">Could not load the medication list.</string>
+    <string name="medication_name">Medication name</string>
+    <string name="medication_dose_title">Dose</string>
+    <string name="medication_dose_amount">Dose amount</string>
+    <string name="medication_dose_unit">Dose unit</string>
+    <string name="medication_dates_title">Dates</string>
+    <string name="medication_date_hint">Enter dates in YYYY-MM-DD format.</string>
+    <string name="medication_start_date">Start date</string>
+    <string name="medication_end_date">End date (optional)</string>
+    <string name="medication_optional_title">Optional details</string>
+    <string name="medication_strength_value">Medication strength</string>
+    <string name="medication_strength_unit">Strength unit</string>
+    <string name="medication_form_label">Medication form</string>
+    <string name="medication_form_none">Not specified</string>
+    <string name="medication_form_tablet">Tablet</string>
+    <string name="medication_form_capsule">Capsule</string>
+    <string name="medication_form_liquid">Liquid</string>
+    <string name="medication_form_other">Other</string>
+    <string name="medication_save">Save medication</string>
+    <string name="medication_back">Back to medications</string>
+    <string name="medication_field_required">Fill in this field.</string>
+    <string name="medication_positive_decimal">Enter a number greater than zero.</string>
+    <string name="medication_invalid_date">Enter a valid date in YYYY-MM-DD format.</string>
+    <string name="medication_end_before_start">The end date must be on or after the start date.</string>
+    <string name="medication_correct_fields">Check the fields with errors.</string>
+    <string name="medication_save_rejected">Could not save the medication. Check the details and try again.</string>
+    <string name="medication_save_failed">Could not save the medication. Try again.</string>
+</resources>

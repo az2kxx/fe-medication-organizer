@@ -447,6 +447,47 @@ class MainActivityTest {
     }
 
     @Test
+    fun addingMedicationValidatesDatesAndRefreshesTheList() {
+        startFromWelcome()
+        val newMedication = "Lek testowy"
+        val medications = composeRule.onNodeWithTag("tab-medications")
+        medications.performClick()
+        waitForNode(hasTestTag("medications-list"))
+        composeRule.onNodeWithText(newMedication).assertDoesNotExist()
+        composeRule.onNodeWithTag("medications-add").performScrollTo().performClick()
+        assertEventuallyDisplayed(hasTestTag("screen-medication-add"))
+
+        replaceField("medication-name", newMedication)
+        replaceField("medication-dose-amount", "0,5")
+        replaceField("medication-dose-unit", "tabletki")
+        replaceField("medication-start-date", "2026-02-30")
+        val save = composeRule.onNodeWithTag("medication-save")
+        save.performScrollTo().performClick()
+        composeRule.onNodeWithTag("medication-start-date").performScrollTo().assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.Error, "Wpisz istniejącą datę w formacie RRRR-MM-DD."),
+        )
+
+        replaceField("medication-start-date", "2026-11-02")
+        replaceField("medication-end-date", "2026-11-01")
+        save.performScrollTo().performClick()
+        composeRule.onNodeWithTag("medication-end-date").performScrollTo().assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.Error, "Data końca nie może być wcześniejsza niż data początku."),
+        )
+
+        replaceField("medication-end-date", "2026-11-03")
+        save.performScrollTo().performClick()
+        assertEventuallyDisplayed(hasTestTag("screen-medications"))
+        waitForNode(hasText(newMedication))
+        composeRule.onNodeWithText(newMedication).performScrollTo().assertIsDisplayed()
+
+        composeRule.onNodeWithTag("tab-history").performClick()
+        composeRule.onNodeWithTag("screen-history").assertIsDisplayed()
+        medications.performClick()
+        waitForNode(hasText(newMedication))
+        composeRule.onNodeWithText(newMedication).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
     fun bottomTabsOpenSectionsDirectlyAndExposeSelection() {
         startFromWelcome()
         composeRule.onNodeWithTag("tab-today").assertIsSelected()
