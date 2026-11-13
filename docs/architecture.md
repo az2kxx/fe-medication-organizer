@@ -36,6 +36,8 @@ Komendy uruchomienia i wymagane SDK są w README. [Uruchomienie projektu](../REA
 
 `DemoPreferencesStore` trzyma jeden rekord preferencji wbudowanego konta demo. Android używa prywatnych `SharedPreferences`, a iOS `UserDefaults` aplikacji. Zmiany nazwy i konta utworzone w demo są dostępne w pamięci tej samej instancji `AppServices`. Ustawienia języka, strefy czasowej, dźwięku i wibracji pozostają lokalne lub systemowe. [FE-06](https://github.com/az2kxx/fe-medication-organizer/issues/6)
 
+Zapis preferencji należy do zalogowanej części aplikacji. Wyjście z Ustawień nie anuluje zapisu ani aktualizacji wspólnego stanu konta. Po powrocie formularz pozostaje zablokowany do zakończenia operacji. Odpowiedzi zapisu profilu i preferencji są scalane z bieżącym stanem konta, aby równoległe zmiany nie nadpisywały pozostałych danych.
+
 ## Obsługa sesji
 
 Rejestracja tworzy konto i kieruje do logowania z uzupełnionym adresem e-mail. Dopiero logowanie otwiera sesję. Klient wylicza jej wygaśnięcie z `expiresInSeconds` i dodaje `Authorization: Bearer` do żądań wymagających sesji. W trybie `MOCK` fikcyjny token trafia wyłącznie do lokalnego transportu.

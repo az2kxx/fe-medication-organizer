@@ -59,12 +59,14 @@ private val preferencesDraftSaver = listSaver<AccessibilityPreferences, Any>(
 @Composable
 internal fun AccessibilitySettings(
     current: AccessibilityPreferences,
+    isSaving: Boolean,
     onSave: suspend (AccessibilityPreferences) -> Unit,
 ) {
     var draft by rememberSaveable(current, stateSaver = preferencesDraftSaver) { mutableStateOf(current) }
     var saving by remember { mutableStateOf(false) }
     var saved by remember { mutableStateOf(false) }
     var failed by remember { mutableStateOf(false) }
+    val busy = saving || isSaving
 
     fun update(value: AccessibilityPreferences) {
         draft = value
@@ -80,14 +82,14 @@ internal fun AccessibilitySettings(
     PreferenceSwitch(
         label = stringResource(Res.string.preferences_simplified),
         checked = draft.simplifiedMode,
-        enabled = !saving,
+        enabled = !busy,
         tag = "preferences-simplified",
         onChange = { update(draft.copy(simplifiedMode = it)) },
     )
     PreferenceSwitch(
         label = stringResource(Res.string.preferences_high_contrast),
         checked = draft.highContrast,
-        enabled = !saving,
+        enabled = !busy,
         tag = "preferences-high-contrast",
         onChange = { update(draft.copy(highContrast = it)) },
     )
@@ -103,7 +105,7 @@ internal fun AccessibilitySettings(
                 onClick = { update(draft.copy(textScale = percent)) },
                 label = { Text(stringResource(Res.string.preferences_percent, percent)) },
                 modifier = Modifier.heightIn(min = 56.dp).testTag("preferences-text-$percent"),
-                enabled = !saving,
+                enabled = !busy,
             )
         }
     }
@@ -119,7 +121,8 @@ internal fun AccessibilitySettings(
     }
     AppSubmitButton(
         text = stringResource(Res.string.preferences_save),
-        enabled = draft != current && !saving,
+        enabled = draft != current && !busy,
+        isSaving = busy,
         onSubmit = {
             saving = true
             failed = false
