@@ -76,6 +76,7 @@ internal fun AppNavigation(
     settings: ApiSettings,
     invalidConfiguration: Boolean,
     account: AccountUiState,
+    savingPreferences: Boolean,
     demo: DemoRepository?,
     organizers: OrganizerCatalogRepository?,
     onRetry: () -> Unit,
@@ -182,6 +183,7 @@ internal fun AppNavigation(
                         )
                         Destination.Settings -> SettingsContent(
                             account = account,
+                            savingPreferences = savingPreferences,
                             onProfile = { navigate(Destination.Profile) },
                             onRetry = onRetry,
                             onSavePreferences = onSavePreferences,
@@ -219,6 +221,7 @@ internal fun AppNavigation(
 @Composable
 private fun SettingsContent(
     account: AccountUiState,
+    savingPreferences: Boolean,
     onProfile: () -> Unit,
     onRetry: () -> Unit,
     onSavePreferences: suspend (AccessibilityPreferences) -> Unit,
@@ -243,7 +246,7 @@ private fun SettingsContent(
                 else stringResource(Res.string.profile_name_summary, displayName),
             )
             SecondaryAction(Res.string.navigation_open_profile, "navigation-open-profile", onProfile)
-            AccessibilitySettings(account.preferences, onSavePreferences)
+            AccessibilitySettings(account.preferences, savingPreferences, onSavePreferences)
         }
     }
     if (signOutFailed) {
