@@ -12,6 +12,10 @@ Ten dokument obowiązuje osoby pracujące nad frontendem oraz sesje Codexa i Cla
 4. Uruchom sprawdzenia z README, które dotyczą zmiany. W PR wpisz `Closes #<numer>`, opisz efekt, wykonane sprawdzenia i zależności. Podaj przyczynę, jeżeli któregoś sprawdzenia nie udało się uruchomić. [Komendy w README](../README.md)
 5. Druga osoba sprawdza PR. Zespół scala go do `codex/mvp-frontend` po akceptacji review i przejściu CI. Po scaleniu zamknij ręcznie zrealizowane issue. GitHub interpretuje `Closes` z opisu PR tylko dla gałęzi domyślnej. Decyzje o API i przekazaniu pracy zapisujcie w issue, PR lub dokumentacji repozytorium, żeby dało się wznowić zadanie w nowej sesji. [Łączenie PR z issue w GitHub](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue)
 
+## Commity i review prac prowadzonych przez az2kxx
+
+Na podstawie decyzji właściciela repozytorium commity i PR-y prac prowadzonych przez @az2kxx powstają po testach oraz wewnętrznym review. Wcześniejsza zgoda Dawida przed commitem nie jest wymagana. PR-y kierujemy do `codex/mvp-frontend`; scalanie pozostaje osobnym krokiem po zielonym CI i akceptacji review. `main` pozostaje bez zmian do osobnej decyzji właściciela.
+
 ## Dane i weryfikacja
 
 - Przechowuj przykładowe żądania i odpowiedzi w wersjonowanych plikach fixture. Używaj fikcyjnych kont, leków i historii. Konfigurację lokalną i sekrety trzymaj poza Gitem.
