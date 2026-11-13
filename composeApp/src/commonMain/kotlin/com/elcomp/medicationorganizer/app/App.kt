@@ -14,10 +14,12 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.elcomp.medicationorganizer.core.network.ApiError
 import com.elcomp.medicationorganizer.core.network.ApiException
 import com.elcomp.medicationorganizer.core.network.ApiSettings
 import com.elcomp.medicationorganizer.core.network.AppServices
@@ -29,6 +31,7 @@ import com.elcomp.medicationorganizer.features.auth.presentation.AuthFlow
 import com.elcomp.medicationorganizer.features.profile.data.AccessibilityPreferences
 import com.elcomp.medicationorganizer.features.profile.data.DemoPreferencesStore
 import com.elcomp.medicationorganizer.features.profile.presentation.AccountUiState
+import kotlinx.coroutines.async
 
 data class AppLaunchConfig(
     val settings: ApiSettings = ApiSettings.Mock(),
@@ -111,6 +114,8 @@ fun App(services: AppServices, invalidConfiguration: Boolean) {
 @Composable
 private fun SignedInApp(services: AppServices, invalidConfiguration: Boolean) {
     val repository = services.profile
+    val scope = rememberCoroutineScope()
+    var savingPreferences by remember { mutableStateOf(false) }
     var retry by remember { mutableIntStateOf(0) }
     var account by remember {
         mutableStateOf<AccountUiState>(
@@ -134,18 +139,32 @@ private fun SignedInApp(services: AppServices, invalidConfiguration: Boolean) {
             settings = services.settings,
             invalidConfiguration = invalidConfiguration,
             account = account,
+            savingPreferences = savingPreferences,
             demo = services.demo,
             organizers = services.organizers,
             onRetry = { retry++ },
             onSaveDisplayName = { name ->
-                val current = account as AccountUiState.Ready
                 val profile = requireNotNull(repository).updateDisplayName(name)
+                val current = account as AccountUiState.Ready
                 account = current.copy(profile = profile)
             },
             onSavePreferences = { draft ->
-                val current = account as AccountUiState.Ready
-                val saved = requireNotNull(repository).savePreferences(draft)
-                account = current.copy(preferences = saved)
+                if (savingPreferences) throw ApiException(ApiError.CONFLICT)
+                savingPreferences = true
+                // The signed-in composition owns the write, independently of the settings screen.
+                scope.async {
+                    try {
+                        val saved = requireNotNull(repository).savePreferences(draft)
+                        val current = account as AccountUiState.Ready
+                        account = current.copy(preferences = saved)
+                        Result.success(Unit)
+                    } catch (error: ApiException) {
+                        // A detached screen may no longer await the result; keep expected failures local.
+                        Result.failure<Unit>(error)
+                    } finally {
+                        savingPreferences = false
+                    }
+                }.await().getOrThrow()
             },
             onSignOut = services.session::signOut,
         )
