@@ -28,6 +28,7 @@ import com.elcomp.medicationorganizer.core.session.SessionState
 import com.elcomp.medicationorganizer.core.session.SessionTokenStore
 import com.elcomp.medicationorganizer.core.ui.AppLoadingState
 import com.elcomp.medicationorganizer.features.auth.presentation.AuthFlow
+import com.elcomp.medicationorganizer.features.organizers.presentation.rememberOrganizerAssignments
 import com.elcomp.medicationorganizer.features.profile.data.AccessibilityPreferences
 import com.elcomp.medicationorganizer.features.profile.data.DemoPreferencesStore
 import com.elcomp.medicationorganizer.features.profile.presentation.AccountUiState
@@ -116,6 +117,7 @@ private fun SignedInApp(services: AppServices, invalidConfiguration: Boolean) {
     val repository = services.profile
     val scope = rememberCoroutineScope()
     var savingPreferences by remember { mutableStateOf(false) }
+    val assignments = rememberOrganizerAssignments(services.assignments, services.organizers)
     var retry by remember { mutableIntStateOf(0) }
     var account by remember {
         mutableStateOf<AccountUiState>(
@@ -142,6 +144,7 @@ private fun SignedInApp(services: AppServices, invalidConfiguration: Boolean) {
             savingPreferences = savingPreferences,
             demo = services.demo,
             organizers = services.organizers,
+            assignments = assignments,
             onRetry = { retry++ },
             onSaveDisplayName = { name ->
                 val profile = requireNotNull(repository).updateDisplayName(name)

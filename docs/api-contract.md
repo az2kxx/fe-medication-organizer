@@ -8,14 +8,14 @@ Oba tryby używają tych samych DTO rejestracji i logowania. Tryb, scenariusz de
 
 | Tryb docelowy | Skąd pochodzą dane |
 | --- | --- |
-| `MOCK` | Lokalny transport obsługuje rejestrację i logowanie z fikcyjnymi danymi, profil i preferencje bieżącego konta oraz robocze operacje planu, leków, przygotowania i historii. |
+| `MOCK` | Lokalny transport obsługuje rejestrację i logowanie z fikcyjnymi danymi, profil i preferencje bieżącego konta, kasetki oraz robocze operacje planu, leków, przygotowania i historii. |
 | `LIVE` | Repozytorium wysyła rejestrację i logowanie do skonfigurowanego backendu. Dla kolejnych tras najpierw potwierdzamy kontrakt w kodzie i zachowanie odpowiedzi. |
 
 ## Potwierdzony kontrakt rejestracji i logowania
 
 Bazowa ścieżka to `/api`. Backend zezwala na żądania do `/api/auth/**` bez sesji. Pozostałe żądania wymagają uwierzytelnienia przez `Authorization: Bearer <token>`. [Konfiguracja zabezpieczeń](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/config/SecurityConfig.java#L40-L51)
 
-W `MOCK` publiczne są logowanie, rejestracja i odczyt modelu kasetki. Robocze trasy profilu, preferencji, leków, planu, przygotowania i deklaracji przyjęcia wymagają ważnej sesji demo. Klient używa odpowiedzi `401` z chronionej trasy jako sygnału do zakończenia sesji. [Obsługa sesji](architecture.md#obsługa-sesji)
+W `MOCK` publiczne są logowanie, rejestracja i odczyt katalogu modeli kasetek. Robocze trasy przypisań kasetek, profilu, preferencji, leków, planu, przygotowania i deklaracji przyjęcia wymagają ważnej sesji demo. Klient używa odpowiedzi `401` z chronionej trasy jako sygnału do zakończenia sesji. [Obsługa sesji](architecture.md#obsługa-sesji)
 
 ### Rejestracja `POST /api/auth/register`
 
@@ -96,7 +96,7 @@ Warstwa transportu mapuje status HTTP na kategorię i lokalny komunikat `ApiExce
 
 Projekt zakłada publiczny odczyt katalogu oraz uwierzytelnienie i kontrolę dostępu do pozostałych zasobów. Obecny backend udostępnia m.in. `GET /api/users/{id}` i `PATCH /api/users/change-display-name`. Odczyt przez ID jest dostępny dla uwierzytelnionych użytkowników niezależnie od właściciela profilu. Zmiana nazwy wymaga bieżącego hasła. Docelowe trasy profilu i preferencji poniżej pozostają do uzgodnienia przed integracją `LIVE`. [Kontroler użytkowników](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/users/UserController.java#L51-L81) · [Odczyt przez ID](https://github.com/Matt1479/medication-organizer/blob/47f51ad367d9847508a0b079a03aa52bd8fc813a/src/main/java/com/matt1479/medicationorganizer/users/UserService.java#L44-L50)
 
-`services.profile` udostępnia profil i preferencje. `services.organizers` udostępnia katalog modeli kasetek. `services.demo` udostępnia odczyt modelu kasetki po ID, listę i dodawanie leków, zastąpienie harmonogramu, plan dnia i tygodnia, przygotowanie kasetki oraz zapis i odczyt deklaracji przyjęcia. Tabela obejmuje także trasy planowane dla kolejnych zadań. [Repozytorium profilu](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/features/profile/data/ProfileRepository.kt) · [Repozytorium katalogu](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/features/organizers/data/OrganizerCatalogRepository.kt) · [Repozytorium demo](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/core/demo/DemoRepository.kt)
+`services.profile` udostępnia profil i preferencje. `services.organizers` udostępnia katalog modeli kasetek, a `services.assignments` ich przypisania. `services.demo` udostępnia odczyt modelu kasetki po ID, listę i dodawanie leków, zastąpienie harmonogramu, plan dnia i tygodnia, przygotowanie kasetki oraz zapis i odczyt deklaracji przyjęcia. Tabela obejmuje także trasy planowane dla kolejnych zadań. [Repozytorium profilu](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/features/profile/data/ProfileRepository.kt) · [Repozytorium katalogu](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/features/organizers/data/OrganizerCatalogRepository.kt) · [Repozytorium demo](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/core/demo/DemoRepository.kt)
 
 | Metoda | Trasa | Zastosowanie |
 | --- | --- | --- |
@@ -105,7 +105,7 @@ Projekt zakłada publiczny odczyt katalogu oraz uwierzytelnienie i kontrolę dos
 | `GET` | `/api/organizer-models` | Katalog i wyszukiwanie przez `qrCode` lub `productCode` |
 | `GET` | `/api/organizer-models/{id}` | Model i definicje przegródek |
 | `GET`, `POST` | `/api/users/me/organizers` | Lista i przypisanie kasetek |
-| `GET`, `PATCH`, `DELETE` | `/api/users/me/organizers/{id}` | Odczyt, zmiana i usunięcie przypisania |
+| `GET`, `PATCH`, `DELETE` | `/api/users/me/organizers/{id}` | Odczyt, zmiana i usunięcie przypisania z zachowaniem historii |
 | `GET`, `POST` | `/api/medications` | Lista i dodanie leku |
 | `GET`, `PATCH` | `/api/medications/{id}` | Szczegóły i edycja leku |
 | `PATCH` | `/api/medications/{id}/status` | Zmiana statusu leku |
@@ -158,6 +158,28 @@ Układ kasetki wynika z przegródek posortowanych według `positionIndex`. Rząd
 Klient usuwa białe znaki z końców kodu i koduje go w całości w zapytaniu. `MOCK` porównuje kod bez rozróżniania wielkości liter. Katalog demo ma model 7×2 używany przez plan i przygotowanie, model 7×3 (`ELC-7X3`), model dzienny 1×4 bez dni tygodnia i nieaktywny model 7×1. Scenariusz `EMPTY` zachowuje katalog. [Katalog demo](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/core/demo/DemoCatalog.kt)
 
 Katalog nie ma instrukcji produktu ani zdjęć modeli. Projekt backendu nie przewiduje dla nich pól ani tras.
+
+### Robocze przypisania kasetek w MOCK
+
+Trasy `/api/users/me/organizers` działają wyłącznie w `MOCK` i wymagają `Authorization: Bearer <token>`. Każda operacja dotyczy bieżącego konta. Kształt odpowiedzi i reguły zapisu wymagają potwierdzenia przed integracją `LIVE`. [FE-09](https://github.com/az2kxx/fe-medication-organizer/issues/9)
+
+| Metoda i ścieżka względem `/api/users/me/organizers` | Żądanie | Odpowiedź |
+| --- | --- | --- |
+| `GET` | — | `200` z tablicą `UserOrganizer` |
+| `GET /{id}` | — | `200` z jednym `UserOrganizer` |
+| `POST` | `organizerModelId` i opcjonalne `displayName` | `201` z nowym `UserOrganizer` |
+| `PATCH /{id}` | Pełny zestaw `displayName`, `active` i `isDefault` | `200` z zaktualizowanym `UserOrganizer` |
+| `DELETE /{id}` | — | `204` bez treści |
+
+`UserOrganizer` zawiera `id` i `organizerModelId` (`Long`), `displayName` (`String?`), `active` i `isDefault` (`Boolean`) oraz `assignedAt` (`Instant` w formacie ISO 8601). `id` identyfikuje przypisanie i trafia do tras planu oraz przygotowania. `organizerModelId` służy do odczytu układu przegródek z katalogu i pozostaje stałe po utworzeniu przypisania. Każde nowe przypisanie jest aktywne i ma `isDefault=false`. Ten sam model można przypisać więcej niż raz.
+
+`POST` przyjmuje np. `{"organizerModelId":2,"displayName":"Kasetka podróżna"}`. `PATCH` wymaga wszystkich trzech pól, np. `{"displayName":null,"active":true,"isDefault":false}`. `displayName` jest jawne w odpowiedzi i w `PATCH`. `null` lub pusta nazwa po usunięciu skrajnych białych znaków oznacza wyświetlanie nazwy modelu. Nazwa dłuższa niż 32 znaki lub zawierająca znaki sterujące daje `400`. [Fixture PATCH](../composeApp/src/androidHostTest/resources/fixtures/organizers/assignment-patch-request.json) · [Fixture odpowiedzi](../composeApp/src/androidHostTest/resources/fixtures/organizers/assignment-response.json)
+
+`active` określa, czy przypisanie jest dostępne do użycia, a `isDefault` wskazuje domyślne przypisanie bieżącego konta. Ustawienie aktywnego przypisania jako domyślnego atomowo zdejmuje tę flagę z poprzedniego. `active=false` i `isDefault=true` zwraca `409`. Bieżący wybór w UI jest osobny. Wybranie innej kasetki zmienia kontekst układu, planu i przygotowania bez zapisywania flag `active` lub `isDefault`. Gdy bieżący wybór przestaje być dostępny, klient wybiera aktywną domyślną kasetkę, a gdy takiej brak, pierwszą aktywną.
+
+Dezaktywacja przez `PATCH` zachowuje przypisanie na liście i pozwala je ponownie aktywować. `DELETE` ukrywa przypisanie w odczytach i zachowuje historię przyjęć. Istniejące wystąpienie dawki nadal można zgłosić po dezaktywacji lub usunięciu przypisania. Nieznane lub usunięte przypisanie oraz nieznany model dają `404`. Próba przypisania wycofanego modelu albo odczytu planu lub pracy z przygotowaniem dla nieaktywnego przypisania daje `409`.
+
+W `NORMAL` przypisanie `1` wskazuje model `1` (7×2), jest aktywne i domyślne. Zawiera początkową dawkę demo. Przypisanie `101` wskazuje model `2` (7×3), jest aktywne i zaczyna z pustym planem. W `EMPTY` zostaje przypisanie `1` z pustym planem. Przy zapisie harmonogramu leku bez przypisania demo wybiera domyślne przypisanie albo pierwsze aktywne. Jeśli żadne nie jest aktywne, harmonogram pozostaje bez przypisania. Późniejsza zmiana domyślnej kasetki albo wyboru w UI nie przenosi i nie powiela przypisanych dawek. [Repozytorium przypisań](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/features/organizers/data/OrganizerAssignmentsRepository.kt) · [Trasy demo](../composeApp/src/commonMain/kotlin/com/elcomp/medicationorganizer/core/demo/DemoRoutes.kt)
 
 ## Robocze przykłady dla mocków
 
@@ -284,7 +306,7 @@ Roboczy plan dnia zwraca tablicę. Dzień bez dawek zwraca `[]`. DTO odczytują 
 ## Do uzgodnienia z backendem
 
 - Kształt odpowiedzi katalogu z sekcji o katalogu: lista bez przegródek, pusta tablica dla nieznanego kodu, obecność modeli nieaktywnych na liście i porównanie kodu bez rozróżniania wielkości liter.
-- Pełne odpowiedzi profilu, preferencji, przypisania kasetki, planu dnia i tygodnia, historii oraz sesji przygotowania. Potrzebujemy także formatu pustych list, wyniku wyszukiwania QR i odpowiedzi przy braku bieżącej sesji.
+- Pełne odpowiedzi profilu, preferencji, przypisania kasetki, planu dnia i tygodnia, historii oraz sesji przygotowania. Dla przypisań trzeba też potwierdzić pełny zestaw pól `PATCH`, zasady ustawiania domyślnej kasetki i usunięcie z zachowaniem historii. Potrzebujemy także formatu pustych list, wyniku wyszukiwania QR i odpowiedzi przy braku bieżącej sesji.
 - Dozwolone pola mutacji bez przykładów, w tym `form` przy dodawaniu leku. W modelu danych jest `form`, a skrócone żądanie nie pokazuje tego pola. Trzeba potwierdzić wymagane i opcjonalne pola, dopuszczalne wartości `timeOfDay` oraz numerację dni tygodnia.
 - Reguły przypisania dawek do kasetki i przegródki oraz kształt odpowiedzi dla dawki bez przypisanej przegródki. Plan powinien przekazywać dane potrzebne kreatorowi i widokowi kasetki.
 - Reguła nadawania `MISSED`, zachowanie lokalnego czasu w razie zmiany strefy lub przejścia na czas letni i zimowy oraz obsługa ponownego zgłoszenia lub korekty intake.

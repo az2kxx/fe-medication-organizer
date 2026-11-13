@@ -1,6 +1,9 @@
 package com.elcomp.medicationorganizer.core.demo
 
 import com.elcomp.medicationorganizer.core.network.apiJson
+import com.elcomp.medicationorganizer.features.organizers.data.AssignOrganizerRequest
+import com.elcomp.medicationorganizer.features.organizers.data.UpdateOrganizerAssignment
+import com.elcomp.medicationorganizer.features.organizers.data.UserOrganizer
 import com.elcomp.medicationorganizer.features.organizers.data.dto.OrganizerModelDetails
 import com.elcomp.medicationorganizer.features.organizers.data.dto.toSummary
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -43,6 +46,14 @@ internal class DemoRoutes(private val empty: Boolean = false) {
                         .map(OrganizerModelDetails::toSummary),
                 )
                 "GET /api/organizer-models/{id}" -> json(DemoCatalog.model(id()) ?: missing("Unknown demo model"))
+                "GET /api/users/me/organizers" -> json(state.listAssignments())
+                "GET /api/users/me/organizers/{id}" -> json(state.assignment(id()))
+                "POST /api/users/me/organizers" -> json(state.assignOrganizer(request.decode()), HttpStatusCode.Created)
+                "PATCH /api/users/me/organizers/{id}" -> json(state.updateAssignment(id(), request.decode()))
+                "DELETE /api/users/me/organizers/{id}" -> {
+                    state.removeAssignment(id())
+                    respond("", HttpStatusCode.NoContent)
+                }
                 "GET /api/medications" -> json(state.medications())
                 "POST /api/medications" -> json(state.createMedication(request.decode()), HttpStatusCode.Created)
                 "PATCH /api/medications/{id}" -> json(state.updateMedication(id(), request.decode()))
@@ -94,6 +105,7 @@ private val dateFormat = Regex("[0-9]{4}-[0-9]{2}-[0-9]{2}")
 private val timeFormat = Regex("([01][0-9]|2[0-3]):[0-5][0-9]")
 private val decimalFormat = Regex("[0-9]+(\\.[0-9]+)?")
 private const val secondsPerDay = 86_400L
+private const val backupAssignmentId = 101L
 
 private fun dayOf(date: String): Long {
     require(dateFormat.matches(date))
@@ -112,22 +124,69 @@ private class DemoState(empty: Boolean) {
     private data class DoseKey(val medicationId: Long, val date: String, val time: String)
 
     private var nextId = 1L
+    private var nextAssignmentId = backupAssignmentId + 1
+    private val assignments = linkedMapOf(
+        DEMO_ORGANIZER_ID to UserOrganizer(DEMO_ORGANIZER_ID, DEMO_MODEL_ID, "Moja kasetka", true, true, demoNow),
+    )
+    private val removedAssignments = mutableSetOf<Long>()
     private val medications = linkedMapOf<Long, StoredMedication>()
+    private val medicationAssignments = mutableMapOf<Long, Long>()
     private val schedules = mutableMapOf<Long, MutableList<MedicationSchedule>>()
     private val occurrences = linkedMapOf<DoseKey, DoseOccurrence>()
     private val intake = mutableListOf<IntakeRecord>()
-    private var preparation: Preparation? = null
-
-    private val model = DemoCatalog.demoModel
+    private val preparations = mutableMapOf<Long, Preparation>()
 
     init {
         if (!empty) {
+            assignments[backupAssignmentId] =
+                UserOrganizer(backupAssignmentId, DEMO_MODEL_7X3_ID, "Kasetka zapasowa", true, false, demoNow)
             val medication = createMedication(CreateMedication("Lek demonstracyjny", JsonPrimitive(1), "TABLET"))
             replaceSchedule(
                 medication.id,
                 ReplaceSchedule(DEMO_DATE, setOf(1), listOf(ScheduleTime("08:00", TimeOfDay.MORNING))),
             )
         }
+    }
+
+    fun listAssignments(): List<UserOrganizer> = assignments.values.filter { it.id !in removedAssignments }
+
+    fun assignment(id: Long): UserOrganizer =
+        assignments[id]?.takeUnless { id in removedAssignments } ?: missing("Unknown demo organizer assignment")
+
+    fun assignOrganizer(request: AssignOrganizerRequest): UserOrganizer {
+        val model = DemoCatalog.model(request.organizerModelId) ?: missing("Unknown demo model")
+        if (!model.active) conflict("Organizer model is withdrawn")
+        val displayName = normalizeDisplayName(request.displayName)
+        return UserOrganizer(nextAssignmentId++, model.id, displayName, true, false, demoNow)
+            .also { assignments[it.id] = it }
+    }
+
+    fun updateAssignment(id: Long, request: UpdateOrganizerAssignment): UserOrganizer {
+        val current = assignment(id)
+        val displayName = normalizeDisplayName(request.displayName)
+        if (request.isDefault && !request.active) conflict("Default organizer must be active")
+
+        if (request.isDefault) {
+            for (entry in assignments.entries) {
+                if (entry.key != id && entry.value.isDefault) {
+                    entry.setValue(entry.value.copy(isDefault = false))
+                }
+            }
+        }
+        return current.copy(displayName = displayName, active = request.active, isDefault = request.isDefault)
+            .also { assignments[id] = it }
+    }
+
+    fun removeAssignment(id: Long) {
+        assignments[id] = assignment(id).copy(active = false, isDefault = false)
+        removedAssignments.add(id)
+    }
+
+    private fun normalizeDisplayName(value: String?): String? {
+        require(value?.any(Char::isISOControl) != true)
+        val name = value?.trim()
+        require(name == null || name.length <= 32)
+        return name?.takeUnless(String::isEmpty)
     }
 
     fun medications(): List<Medication> = medications.values.map(StoredMedication::summary)
@@ -188,6 +247,11 @@ private class DemoState(empty: Boolean) {
         require(request.times.isNotEmpty() && request.times.all { timeFormat.matches(it.time) })
         require(request.times.map(ScheduleTime::time).toSet().size == request.times.size)
 
+        if (medicationId !in medicationAssignments) {
+            val organizer = assignments.values.firstOrNull { it.active && it.isDefault }
+                ?: assignments.values.firstOrNull(UserOrganizer::active)
+            organizer?.let { medicationAssignments[medicationId] = it.id }
+        }
         val versions = schedules.getOrPut(medicationId) { mutableListOf() }
         val latest = versions.lastOrNull()
         if (latest != null && latest.validFrom == request.validFrom && latest.validUntil == request.validUntil &&
@@ -215,44 +279,44 @@ private class DemoState(empty: Boolean) {
     }
 
     fun dailyPlan(organizerId: Long, date: String): List<DoseOccurrence> {
-        requireOrganizer(organizerId)
         val day = dayOf(date)
-        return plan(day, day)
+        return plan(organizerId, day, day)
     }
 
     fun weeklyPlan(organizerId: Long, weekStart: String): List<DoseOccurrence> {
-        requireOrganizer(organizerId)
         val first = dayOf(weekStart)
-        return plan(first, first + 6)
+        return plan(organizerId, first, first + 6)
     }
 
     fun startPreparation(organizerId: Long, request: StartPreparation): Preparation {
-        requireOrganizer(organizerId)
+        val model = activeModel(organizerId)
         val first = dayOf(request.periodStart)
         val last = dayOf(request.periodEnd)
-        require(last in first..(first + 6))
-        if (preparation?.status == PreparationStatus.IN_PROGRESS) conflict("Preparation already in progress")
+        require(last in first..(first + (model.daysCovered ?: 7) - 1))
+        if (preparations[organizerId]?.status == PreparationStatus.IN_PROGRESS) {
+            conflict("Preparation already in progress")
+        }
 
         val days = (first..last).map(::isoWeekday).toSet()
         val sessionId = nextId++
         return Preparation(
             sessionId, organizerId, request.periodStart, request.periodEnd, PreparationStatus.IN_PROGRESS,
-            model.compartments.filter { it.dayOfWeek in days }.map { definition ->
+            model.compartments.filter { it.dayOfWeek == null || it.dayOfWeek in days }.map { definition ->
                 CompartmentProgress(nextId++, definition.id, CompartmentStatus.UNCHECKED)
             },
-        ).also { preparation = it }
+        ).also { preparations[organizerId] = it }
     }
 
     fun currentPreparation(organizerId: Long): Preparation {
-        requireOrganizer(organizerId)
-        return preparation ?: missing("No demo preparation")
+        requireActiveAssignment(organizerId)
+        return preparations[organizerId] ?: missing("No demo preparation")
     }
 
     fun markCompartment(preparationId: Long, compartmentId: Long, request: UpdateCompartment): CompartmentProgress {
         val session = inProgress(preparationId)
         val index = session.compartments.indexOfFirst { it.compartmentDefinitionId == compartmentId }
         if (index == -1) missing("Unknown compartment for this session")
-        val hasDoses = plan(dayOf(session.periodStart), dayOf(session.periodEnd))
+        val hasDoses = plan(session.userOrganizerId, dayOf(session.periodStart), dayOf(session.periodEnd))
             .any { it.compartmentDefinitionId == compartmentId }
         when (request.status) {
             CompartmentStatus.PREPARED -> if (!hasDoses) conflict("Compartment has no planned doses")
@@ -266,13 +330,13 @@ private class DemoState(empty: Boolean) {
         )
         val compartments = session.compartments.toMutableList()
         compartments[index] = progress
-        preparation = session.copy(compartments = compartments)
+        preparations[session.userOrganizerId] = session.copy(compartments = compartments)
         return progress
     }
 
     fun completePreparation(id: Long): Preparation {
         val session = inProgress(id)
-        val plannedCompartments = plan(dayOf(session.periodStart), dayOf(session.periodEnd))
+        val plannedCompartments = plan(session.userOrganizerId, dayOf(session.periodStart), dayOf(session.periodEnd))
             .mapNotNull(DoseOccurrence::compartmentDefinitionId).toSet()
         if (session.compartments.any { compartment ->
                 val expected = if (compartment.compartmentDefinitionId in plannedCompartments) {
@@ -285,7 +349,8 @@ private class DemoState(empty: Boolean) {
         ) {
             conflict("Check every compartment against the current plan before completing preparation")
         }
-        return session.copy(status = PreparationStatus.READY, completedAt = demoNow).also { preparation = it }
+        return session.copy(status = PreparationStatus.READY, completedAt = demoNow)
+            .also { preparations[session.userOrganizerId] = it }
     }
 
     fun recordIntake(id: Long, request: RecordIntake): IntakeRecord {
@@ -305,13 +370,15 @@ private class DemoState(empty: Boolean) {
         return intake.filter { it.doseOccurrenceId in doseIds }
     }
 
-    private fun plan(first: Long, last: Long): List<DoseOccurrence> {
+    private fun plan(organizerId: Long, first: Long, last: Long): List<DoseOccurrence> {
+        val model = activeModel(organizerId)
         for (day in first..last) {
             val date = dateOf(day)
             val weekday = isoWeekday(day)
             for (medication in medications.values) {
                 val summary = medication.summary
                 if (summary.status != MedicationStatus.ACTIVE) continue
+                if (medicationAssignments[summary.id] != organizerId) continue
                 val request = medication.request
                 if (date < request.startDate || (request.endDate != null && date > request.endDate)) continue
                 val schedule = schedules[summary.id]?.lastOrNull {
@@ -324,9 +391,11 @@ private class DemoState(empty: Boolean) {
                     occurrences.getOrPut(key) {
                         val compartment = model.compartments.firstOrNull {
                             it.dayOfWeek == weekday && it.timeOfDay == time.timeOfDay
+                        } ?: model.compartments.firstOrNull {
+                            it.dayOfWeek == null && it.timeOfDay == time.timeOfDay
                         }
                         DoseOccurrence(
-                            nextId++, summary.id, summary.name, DEMO_ORGANIZER_ID, compartment?.id, date,
+                            nextId++, summary.id, summary.name, organizerId, compartment?.id, date,
                             time.time, request.doseAmount, request.doseUnit, DoseStatus.PENDING,
                         )
                     }
@@ -334,17 +403,20 @@ private class DemoState(empty: Boolean) {
             }
         }
         val dates = dateOf(first)..dateOf(last)
-        return occurrences.values.filter { it.scheduledDate in dates }
+        return occurrences.values.filter { it.userOrganizerId == organizerId && it.scheduledDate in dates }
             .sortedWith(compareBy(DoseOccurrence::scheduledDate, DoseOccurrence::scheduledTime, DoseOccurrence::id))
     }
 
     private fun inProgress(id: Long): Preparation {
-        val session = preparation?.takeIf { it.id == id } ?: missing("Unknown demo preparation")
-        if (session.status != PreparationStatus.IN_PROGRESS) conflict("Demo preparation is not in progress")
+        val session = preparations.values.firstOrNull { it.id == id } ?: missing("Unknown demo preparation")
+        requireActiveAssignment(session.userOrganizerId)
+        if (session.status != PreparationStatus.IN_PROGRESS) conflict("Preparation is already complete")
         return session
     }
 
-    private fun requireOrganizer(id: Long) {
-        if (id != DEMO_ORGANIZER_ID) missing("Unknown demo organizer assignment")
-    }
+    private fun requireActiveAssignment(id: Long): UserOrganizer =
+        assignment(id).also { if (!it.active) conflict("Organizer assignment is inactive") }
+
+    private fun activeModel(id: Long): OrganizerModelDetails =
+        checkNotNull(DemoCatalog.model(requireActiveAssignment(id).organizerModelId))
 }
