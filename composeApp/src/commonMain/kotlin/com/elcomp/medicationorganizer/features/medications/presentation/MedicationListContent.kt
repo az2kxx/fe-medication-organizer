@@ -34,9 +34,9 @@ private sealed interface MedicationListState {
 }
 
 @Composable
-internal fun MedicationListContent(repository: DemoRepository, onAdd: () -> Unit) {
+internal fun MedicationListContent(repository: DemoRepository, revision: Long = 0, onOpen: (Long) -> Unit = {}, onAdd: () -> Unit) {
     var retry by remember { mutableIntStateOf(0) }
-    val list by produceState<MedicationListState>(MedicationListState.Loading, repository, retry) {
+    val list by produceState<MedicationListState>(MedicationListState.Loading, repository, retry, revision) {
         value = MedicationListState.Loading
         value = try {
             MedicationListState.Loaded(repository.medications())
@@ -70,12 +70,15 @@ internal fun MedicationListContent(repository: DemoRepository, onAdd: () -> Unit
             } else {
                 current.medications.forEach { medication ->
                     key(medication.id) {
-                        OutlinedCard(Modifier.fillMaxWidth().testTag("medication-item-${medication.id}")) {
+                        OutlinedCard(onClick = { onOpen(medication.id) }, modifier = Modifier.fillMaxWidth().testTag("medication-item-${medication.id}")) {
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
                                 medication.name,
-                                modifier = Modifier.padding(16.dp),
                                 style = MaterialTheme.typography.titleMedium,
                             )
+                            Text(stringResource(statusLabel(medication.status)))
+                            Text(stringResource(Res.string.medication_details_action), style = MaterialTheme.typography.bodyMedium)
+                            }
                         }
                     }
                 }

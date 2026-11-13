@@ -27,7 +27,7 @@ Otwórz katalog repozytorium w Android Studio, ustaw JDK 21 jako Gradle JDK i ws
 
 APK pojawi się w `androidApp/build/outputs/apk/debug/`. Testy `androidApp` obejmują rejestrację i logowanie w demo, walidację profilu, izolację kont po wylogowaniu oraz odtworzenie preferencji demo po ponownym utworzeniu aktywności. Sprawdzają też wyszukiwanie modelu kasetki po kodzie, układ przegródek i blokadę wyboru modelu nieaktywnego, nawigację w PL i EN oraz dostęp do kontrolek przy skali systemowej 200%. Testy hosta w `composeApp` sprawdzają kontrakt auth, sesję, transport oraz przebieg demo.
 
-Wydzielony edytor harmonogramu FE-12 jest testowany przez `ScheduleEditorTest`, `ScheduleDraftTest` i `ScheduleContractTest`. Nie ma jeszcze wejścia z listy leków; integracja czeka na FE-11. [Interfejs edytora i obowiązki hosta](docs/architecture.md#edytor-harmonogramu-fe-12)
+Lista leków prowadzi do szczegółów, edycji i statusów FE-11 oraz edytora harmonogramu FE-12. Testy `MedicationScheduleFlowTest` sprawdzają cały przepływ, a `ScheduleEditorTest`, `ScheduleDraftTest` i `ScheduleContractTest` walidację i kontrakt. [Interfejs edytora i obowiązki hosta](docs/architecture.md#edytor-harmonogramu-fe-12)
 
 ## iOS
 
@@ -55,6 +55,16 @@ Polecenie sprawdza kompilację aplikacji i frameworka dla symulatora. Do testu s
 1. Uruchom `iosApp` na symulatorze z Xcode w domyślnym `MOCK`. Wybierz **Wypróbuj demo → Leki → Dodaj lek**.
 2. Wpisz fikcyjną nazwę „Lek testowy”, ilość dawki `0,5`, jednostkę `tabletki` i datę początku `2026-02-30`. Wybierz **Zapisz lek** i sprawdź komunikat przy dacie. Zmień początek na `2026-11-02`, wpisz `2026-11-01` jako datę końca i spróbuj zapisać ponownie, by sprawdzić komunikat o kolejności dat.
 3. Ustaw koniec na `2026-11-03`, zapisz i sprawdź, czy „Lek testowy” pojawił się na liście. Otwórz inną zakładkę i wróć do Leków, aby potwierdzić ponowny odczyt. [Żądanie i odpowiedź demo](docs/api-contract.md#dodanie-leku-post-apimedications)
+
+### Leki i harmonogram w MOCK
+
+1. Wybierz **Wypróbuj demo → Leki → Dodaj lek**. Wpisz fikcyjną nazwę, ilość `0,25`, jednostkę `ml` i datę początku, następnie zapisz.
+2. Wybierz lek na liście. **Edytuj dane leku** pozwala zmienić wszystkie pola; **Zawieś w planie**, **Wznów w planie** i potwierdzane **Dezaktywuj wpis** zmieniają status z zachowaniem wcześniejszych potwierdzeń.
+3. Wybierz **Harmonogram leku**, aktywną kasetkę, dni i co najmniej jedną godzinę. Pora dnia jest osobnym, opcjonalnym wyborem. Daty określają okres reguły; godziny `8:00` i `08:00` oznaczają tę samą godzinę.
+4. Zapis przenosi do szczegółów i pobiera świeży podgląd pierwszych siedmiu dni od początku harmonogramu, tylko dla tego leku. Dawka bez pasującej przegródki pozostaje widoczna z neutralnym komunikatem. Ponowne wejście do edytora odczytuje zapisane reguły.
+5. Rekreacja aktywności Androida zachowuje kontekst leku i niezapisany formularz. Dane leków i harmonogramów w MOCK są w pamięci instancji usług; wylogowanie, reset demo lub zakończenie procesu przywraca dane demonstracyjne. Trwały zapis preferencji konta demo pozostaje odrębny.
+
+To zakres FE-11/FE-12. Cyfrowa kasetka, pełny ekran Dzisiaj, historia i kreator przygotowania mają własne tickety. Kontrakt tras leków i harmonogramu pozostaje roboczy do integracji z backendem.
 
 ## Tryby pracy
 

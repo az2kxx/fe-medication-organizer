@@ -109,7 +109,7 @@ Projekt zakłada publiczny odczyt katalogu oraz uwierzytelnienie i kontrolę dos
 | `GET`, `POST` | `/api/medications` | Lista i dodanie leku |
 | `GET`, `PATCH` | `/api/medications/{id}` | Szczegóły i edycja leku |
 | `PATCH` | `/api/medications/{id}/status` | Zmiana statusu leku |
-| `PUT` | `/api/medications/{id}/schedule` | Zastąpienie harmonogramu |
+| `GET`, `PUT` | `/api/medications/{id}/schedule` | Najnowsza wersja i zastąpienie harmonogramu |
 | `GET` | `/api/plan/daily?date=YYYY-MM-DD&organizerId={id}` | Plan dnia |
 | `GET` | `/api/plan/weekly?weekStart=YYYY-MM-DD&organizerId={id}` | Plan tygodnia |
 | `GET` | `/api/dose-occurrences/{id}` | Szczegóły wystąpienia dawki |
@@ -187,7 +187,7 @@ Przykłady pochodzą z projektu kontraktu i zawierają fikcyjne dane. Skrócone 
 
 ### Dodanie leku `POST /api/medications`
 
-Lista i dodawanie działają w `MOCK` i wymagają ważnej sesji. `GET /api/medications` zwraca `200` z tablicą skrótów zawierających `id`, `name` i `status`. Po zapisie klient odświeża listę. Pełne szczegóły i edycja mają osobne trasy w projekcie kontraktu.
+Lista i dodawanie działają w `MOCK` i wymagają ważnej sesji. `GET /api/medications` zwraca `200` z tablicą skrótów zawierających `id`, `name` i `status`. Po zapisie klient odświeża listę. Szczegóły, edycja i zmiana statusu działają również przez robocze trasy MOCK.
 
 W formularzu wymagane są nazwa, dodatnia ilość dawki, jej jednostka i data początku. Data końca jest opcjonalna i może być równa dacie początku. Moc leku jest opcjonalna i wymaga razem wartości oraz jednostki. `form` jest opcjonalne w `MOCK`. Dostępne wartości to `TABLET`, `CAPSULE`, `LIQUID` i `OTHER`. Klient przyjmuje przecinek lub kropkę w liczbie dziesiętnej, np. `0,5`, i wysyła ją jako liczbę JSON `0.5`. Nieprawidłowy zapis żądania daje `400`. [Fixture żądania](../composeApp/src/androidHostTest/resources/fixtures/medications/fe11-create-medication-request.json) · [Fixture odpowiedzi](../composeApp/src/androidHostTest/resources/fixtures/medications/fe11-create-medication-response.json)
 
@@ -224,13 +224,21 @@ W `services.demo` metody `updateMedication` i `updateMedicationStatus` wywołuj�
 
 Edycja przelicza dawki `PENDING` od daty demo. Zawieszenie lub dezaktywacja usuwa takie dawki z planu, a ponowna aktywacja pozwala je wygenerować. Potwierdzone dawki zachowują zapisane dane, a historia pozostaje dostępna.
 
+### Szczegóły leku i przypisanie harmonogramu w MOCK
+
+`GET /api/medications/{id}` zwraca `id`, `name`, `status`, `doseAmount`, `doseUnit`, `startDate` i opcjonalne `endDate`, `strengthValue`, `strengthUnit`, `form`, `userOrganizerId`. Lista pozostaje skrótem `id/name/status`. Nieznany lek daje `404`. [Fixture szczegółów](../composeApp/src/androidHostTest/resources/fixtures/medications/fe11-medication-details-response.json)
+
+`GET /api/medications/{id}/schedule` zwraca ostatnią zapisaną wersję harmonogramu, także gdy zaczyna obowiązywać w przyszłości. Brak reguły lub nieznany lek daje `404`. `MedicationSchedule` i żądanie PUT mają dodatkowe opcjonalne `userOrganizerId` — identyfikator przypisania kasetki, wymagający aktywnego przypisania przy jawnym wyborze. To założenie MOCK do uzgodnienia z backendem; nie jest deklaracją istniejącego pola produkcyjnego API. [Fixture przypisanej reguły](../composeApp/src/androidHostTest/resources/fixtures/schedules/fe12-assigned-schedule-response.json)
+
+UI wysyła wybrany `userOrganizerId`. Starszy PUT bez tego pola zachowuje dotychczasowy kontekst, a dla leku bez przypisania korzysta z aktywnej domyślnej/pierwszej kasetki. Przypisanie jest częścią każdej wersji reguły: zmiana od przyszłej daty nie przepisuje wcześniejszego planu, także jeśli nie był wcześniej odczytany. Po początkowym zapisie bez aktywnej kasetki ponowiony PUT może utworzyć kanoniczną przypisaną wersję; kolejne identyczne PUT są idempotentne. Pełny MOCK stan pozostaje w pamięci instancji usług i resetuje się przy wylogowaniu/resetowaniu demo.
+
 ### Zastąpienie harmonogramu `PUT /api/medications/12/schedule`
 
 Wydzielony edytor FE-12 korzysta z istniejącego `ReplaceSchedule`. `days` zawiera co najmniej jeden dzień 1–7, poniedziałek=1. `times` zawiera co najmniej jedną godzinę, z opcjonalnym `timeOfDay`. Formularz przyjmuje `8:00` i `08:00`, a wysyła `08:00`; minuty wymagają dwóch cyfr. Powtórzenie tej samej znormalizowanej godziny jest błędem wszystkich kolidujących wierszy, także przy różnych porach dnia. Pory dnia nie są wyliczane z godzin.
 
 `validFrom` jest wymaganą istniejącą datą `RRRR-MM-DD`. `validUntil` jest opcjonalne, może być równe początkowi i nie może go poprzedzać. Pusty koniec mapuje się na `null`; istniejący serializer pomija domyślne pola `null`. PUT zastępuje cały zestaw reguł, a formularz zachowuje pozostałe dni i godziny podczas edycji. Niepuste `validUntil` i wszystkie reguły są sprawdzane w [fixture żądania](../composeApp/src/androidHostTest/resources/fixtures/schedules/fe12-replace-schedule-request.json) i [odpowiedzi](../composeApp/src/androidHostTest/resources/fixtures/schedules/fe12-replace-schedule-response.json).
 
-To nadal roboczy kontrakt `MOCK`, bez potwierdzonej implementacji harmonogramu w backendzie. Sam edytor oddaje payload callbackowi hosta. Podłączenie do leków oraz odświeżenie planu czekają na FE-11. Test mocka potwierdza zastąpienie przyszłych dawek i zachowanie wcześniejszych potwierdzeń; produkcyjne generowanie dawek pozostaje po stronie backendu.
+To nadal roboczy kontrakt `MOCK`, bez potwierdzonej implementacji harmonogramu w backendzie. Sam edytor oddaje payload callbackowi hosta. Lista leków i szczegóły otwierają edytor, a po zapisie host wraca do szczegółów i odczytuje świeży podgląd planu tego leku. Test mocka potwierdza zastąpienie przyszłych dawek i zachowanie wcześniejszych potwierdzeń; produkcyjne generowanie dawek pozostaje po stronie backendu.
 
 Żądanie
 

@@ -31,6 +31,9 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.elcomp.medicationorganizer.core.demo.CreateMedication
+import com.elcomp.medicationorganizer.core.demo.MedicationDetails
+import com.elcomp.medicationorganizer.core.time.currentLocalDate
 import com.elcomp.medicationorganizer.core.demo.DemoRepository
 import com.elcomp.medicationorganizer.core.demo.MedicationForm
 import com.elcomp.medicationorganizer.core.network.ApiError
@@ -64,10 +67,22 @@ private val medicationDraftSaver = listSaver<MedicationDraft, String>(
 )
 
 @Composable
-internal fun AddMedicationContent(repository: DemoRepository, onSaved: () -> Unit, onBack: () -> Unit) {
-    var draft by rememberSaveable(stateSaver = medicationDraftSaver) { mutableStateOf(MedicationDraft()) }
+internal fun AddMedicationContent(
+    repository: DemoRepository,
+    onSaved: () -> Unit,
+    onBack: () -> Unit,
+    initial: MedicationDetails? = null,
+    isSaving: Boolean = false,
+    backLabel: StringResource = Res.string.medication_back,
+    onSave: suspend (CreateMedication) -> Unit = { repository.createMedication(it) },
+) {
+    var draft by rememberSaveable(initial?.id, stateSaver = medicationDraftSaver) {
+        mutableStateOf(initial?.let { MedicationDraft(it.name, it.doseAmount.content, it.doseUnit, it.startDate, it.endDate.orEmpty(), it.strengthValue?.content.orEmpty(), it.strengthUnit.orEmpty(), it.form) }
+            ?: MedicationDraft(startDate = currentLocalDate()))
+    }
     var submitted by rememberSaveable { mutableStateOf(false) }
     var saving by remember { mutableStateOf(false) }
+    val busy = saving || isSaving
     var failure by remember { mutableStateOf<ApiError?>(null) }
     var invalidSubmissions by remember { mutableIntStateOf(0) }
     val validation = remember(draft) { draft.validate() }
@@ -90,40 +105,40 @@ internal fun AddMedicationContent(repository: DemoRepository, onSaved: () -> Uni
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         MedicationInput(
-            MedicationField.NAME, draft.name, { change(draft.copy(name = it)) }, errors, requesters, !saving,
+            MedicationField.NAME, draft.name, { change(draft.copy(name = it)) }, errors, requesters, !busy,
         )
 
         MedicationSection(Res.string.medication_dose_title) {
             MedicationInput(
                 MedicationField.DOSE_AMOUNT, draft.doseAmount, { change(draft.copy(doseAmount = it)) },
-                errors, requesters, !saving,
+                errors, requesters, !busy,
             )
             MedicationInput(
                 MedicationField.DOSE_UNIT, draft.doseUnit, { change(draft.copy(doseUnit = it)) },
-                errors, requesters, !saving,
+                errors, requesters, !busy,
             )
         }
         MedicationSection(Res.string.medication_dates_title) {
             Text(stringResource(Res.string.medication_date_hint), style = MaterialTheme.typography.bodyLarge)
             MedicationInput(
                 MedicationField.START_DATE, draft.startDate, { change(draft.copy(startDate = it)) },
-                errors, requesters, !saving,
+                errors, requesters, !busy,
             )
             MedicationInput(
                 MedicationField.END_DATE, draft.endDate, { change(draft.copy(endDate = it)) },
-                errors, requesters, !saving,
+                errors, requesters, !busy,
             )
         }
         MedicationSection(Res.string.medication_optional_title) {
             MedicationInput(
                 MedicationField.STRENGTH_VALUE, draft.strengthValue, { change(draft.copy(strengthValue = it)) },
-                errors, requesters, !saving,
+                errors, requesters, !busy,
             )
             MedicationInput(
                 MedicationField.STRENGTH_UNIT, draft.strengthUnit, { change(draft.copy(strengthUnit = it)) },
-                errors, requesters, !saving,
+                errors, requesters, !busy,
             )
-            MedicationFormSelector(draft.form, enabled = !saving) { change(draft.copy(form = it)) }
+            MedicationFormSelector(draft.form, enabled = !busy) { change(draft.copy(form = it)) }
         }
 
         if (errors.isNotEmpty()) {
@@ -157,7 +172,7 @@ internal fun AddMedicationContent(repository: DemoRepository, onSaved: () -> Uni
                 saving = true
                 failure = null
                 try {
-                    repository.createMedication(request)
+                    onSave(request)
                 } catch (error: ApiException) {
                     failure = error.error
                     return@AppSubmitButton
@@ -167,14 +182,14 @@ internal fun AddMedicationContent(repository: DemoRepository, onSaved: () -> Uni
                 onSaved()
             },
             modifier = Modifier.fillMaxWidth().testTag("medication-save"),
-            isSaving = saving,
+            isSaving = busy,
         )
         OutlinedButton(
             onClick = onBack,
             modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag("medication-back"),
-            enabled = !saving,
+            enabled = !busy,
         ) {
-            Text(stringResource(Res.string.medication_back), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(backLabel), style = MaterialTheme.typography.titleMedium)
         }
     }
 }

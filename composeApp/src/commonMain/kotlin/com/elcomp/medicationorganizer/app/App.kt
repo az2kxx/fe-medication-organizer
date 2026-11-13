@@ -115,6 +115,7 @@ fun App(services: AppServices, invalidConfiguration: Boolean) {
 @Composable
 private fun SignedInApp(services: AppServices, invalidConfiguration: Boolean) {
     val repository = services.profile
+    val dataRevision by services.demoRevision.collectAsState()
     val scope = rememberCoroutineScope()
     var savingPreferences by remember { mutableStateOf(false) }
     val assignments = rememberOrganizerAssignments(services.assignments, services.organizers)
@@ -141,6 +142,7 @@ private fun SignedInApp(services: AppServices, invalidConfiguration: Boolean) {
             settings = services.settings,
             invalidConfiguration = invalidConfiguration,
             account = account,
+            dataRevision = dataRevision,
             savingPreferences = savingPreferences,
             demo = services.demo,
             organizers = services.organizers,

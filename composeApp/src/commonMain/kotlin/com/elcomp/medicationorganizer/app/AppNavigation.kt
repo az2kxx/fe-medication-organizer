@@ -23,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -42,6 +43,8 @@ import com.elcomp.medicationorganizer.core.ui.AppEmptyState
 import com.elcomp.medicationorganizer.core.ui.AppErrorState
 import com.elcomp.medicationorganizer.core.ui.AppLoadingState
 import com.elcomp.medicationorganizer.core.ui.AppSubmitButton
+import com.elcomp.medicationorganizer.features.medications.presentation.MedicationDetailsContent
+import com.elcomp.medicationorganizer.features.schedules.presentation.MedicationScheduleContent
 import com.elcomp.medicationorganizer.features.medications.presentation.AddMedicationContent
 import com.elcomp.medicationorganizer.features.medications.presentation.MedicationListContent
 import com.elcomp.medicationorganizer.features.organizers.data.OrganizerCatalogRepository
@@ -72,6 +75,8 @@ private enum class Destination(val tag: String, val title: StringResource, val t
     OrganizerAssignment("screen-organizer-assignment", Res.string.assignment_details_title, MainTab.Organizer),
     Medications("screen-medications", Res.string.navigation_medications, MainTab.Medications),
     AddMedication("screen-medication-add", Res.string.medication_add_title, MainTab.Medications),
+    MedicationDetails("screen-medication-details", Res.string.medication_details_title, MainTab.Medications),
+    MedicationSchedule("screen-medication-schedule", Res.string.schedule_title, MainTab.Medications),
     Preparation("screen-preparation", Res.string.navigation_preparation, MainTab.Organizer),
     History("screen-history", Res.string.navigation_history, MainTab.History),
     Settings("screen-settings", Res.string.navigation_settings, MainTab.Today),
@@ -91,6 +96,7 @@ internal fun AppNavigation(
     settings: ApiSettings,
     invalidConfiguration: Boolean,
     account: AccountUiState,
+    dataRevision: Long,
     savingPreferences: Boolean,
     demo: DemoRepository?,
     organizers: OrganizerCatalogRepository?,
@@ -100,6 +106,9 @@ internal fun AppNavigation(
     onSavePreferences: suspend (AccessibilityPreferences) -> Unit,
     onSignOut: suspend () -> Unit,
 ) {
+    val mutationScope = rememberCoroutineScope()
+    val mutations = remember(mutationScope) { MutationRunner(mutationScope) }
+    var medicationId by rememberSaveable { mutableStateOf<Long?>(null) }
     var routeName by rememberSaveable { mutableStateOf(Destination.Today.name) }
     var editingAssignmentId by rememberSaveable { mutableStateOf<Long?>(null) }
     var catalogFromAssignments by rememberSaveable { mutableStateOf(false) }
@@ -121,7 +130,8 @@ internal fun AppNavigation(
         Destination.OrganizerCatalog ->
             if (catalogFromAssignments) Destination.OrganizerAssignments else Destination.Organizer
         Destination.Profile -> Destination.Settings
-        Destination.AddMedication -> Destination.Medications
+        Destination.AddMedication, Destination.MedicationDetails -> Destination.Medications
+        Destination.MedicationSchedule -> Destination.MedicationDetails
         else -> Destination.Today
     }
     BackHandler(enabled = backDestination != null) {
@@ -139,7 +149,19 @@ internal fun AppNavigation(
         Column(modifier = Modifier.fillMaxSize()) {
             key(route) {
                 val title = stringResource(route.title)
-                Column(
+                if (route == Destination.MedicationSchedule && demo != null && medicationId != null) {
+                    Column(Modifier.weight(1f).fillMaxWidth().windowInsetsPadding(contentInsets).testTag(route.tag)) {
+                        val items = assignmentList?.items.orEmpty()
+                        val names = items.associate { it.id to assignmentName(it, assignmentList?.models?.get(it.organizerModelId)?.name) }
+                        if (assignments != null && assignmentList == null) {
+                            AssignmentListStatus(assignments)
+                            SecondaryAction(Res.string.medication_back, "schedule-back-loading") { navigate(Destination.MedicationDetails) }
+                        } else {
+                            MedicationScheduleContent(demo, medicationId!!, items, names, selected?.id, mutations.busy, mutations::run,
+                                onSaved = { navigate(Destination.MedicationDetails) }, onBack = { navigate(Destination.MedicationDetails) })
+                        }
+                    }
+                } else Column(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
@@ -278,7 +300,9 @@ internal fun AppNavigation(
                             ) { navigate(Destination.Organizer) }
                         }
                         Destination.Medications -> if (demo != null) {
-                            MedicationListContent(demo) { navigate(Destination.AddMedication) }
+                            MedicationListContent(demo, revision = dataRevision, onOpen = { id -> medicationId = id; navigate(Destination.MedicationDetails) }) {
+                                navigate(Destination.AddMedication)
+                            }
                         } else {
                             AppEmptyState(
                                 title = stringResource(Res.string.medications_empty_title),
@@ -288,10 +312,20 @@ internal fun AppNavigation(
                         Destination.AddMedication -> if (demo != null) {
                             AddMedicationContent(
                                 repository = demo,
+                                isSaving = mutations.busy,
+                                onSave = { request -> mutations.run { demo.createMedication(request) } },
                                 onSaved = { navigate(Destination.Medications) },
                                 onBack = { navigate(Destination.Medications) },
                             )
                         }
+                        Destination.MedicationDetails -> if (demo != null && medicationId != null) {
+                            val items = assignmentList?.items.orEmpty()
+                            MedicationDetailsContent(demo, medicationId!!, mutations.busy, mutations::run,
+                                onSchedule = { id -> medicationId = id; navigate(Destination.MedicationSchedule) },
+                                onBack = { navigate(Destination.Medications) }, organizers = items,
+                                organizerNames = items.associate { it.id to assignmentName(it, assignmentList?.models?.get(it.organizerModelId)?.name) }, revision = dataRevision)
+                        }
+                        Destination.MedicationSchedule -> Unit
                         Destination.History -> AppEmptyState(
                             title = stringResource(Res.string.history_empty_title),
                             message = stringResource(Res.string.history_empty_message),
