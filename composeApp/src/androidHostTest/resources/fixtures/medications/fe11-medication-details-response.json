@@ -1,0 +1,13 @@
+{
+  "id": 12,
+  "name": "Lek demonstracyjny w płynie",
+  "status": "ACTIVE",
+  "doseAmount": 0.125,
+  "doseUnit": "ml",
+  "startDate": "2026-11-02",
+  "endDate": "2026-11-30",
+  "strengthValue": 12.50,
+  "strengthUnit": "mg/ml",
+  "form": "LIQUID",
+  "userOrganizerId": 101
+}

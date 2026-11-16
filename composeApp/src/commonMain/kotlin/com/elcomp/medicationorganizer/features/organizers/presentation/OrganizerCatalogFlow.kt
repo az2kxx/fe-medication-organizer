@@ -32,6 +32,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.elcomp.medicationorganizer.core.demo.TimeOfDay
+import com.elcomp.medicationorganizer.core.network.ApiError
 import com.elcomp.medicationorganizer.core.network.ApiException
 import com.elcomp.medicationorganizer.core.ui.AppActionButton
 import com.elcomp.medicationorganizer.core.ui.AppEmptyState
@@ -55,14 +56,15 @@ private sealed interface LoadState<out T> {
 }
 
 /**
- * Catalog → model details → confirmation. [onAssign] saves the assignment (FE-09). While it is null the
+ * Catalog → model details → confirmation. [onAssign] saves the named assignment. While it is null the
  * confirmation step explains that saving is not available yet.
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 internal fun OrganizerCatalogFlow(
     repository: OrganizerCatalogRepository,
-    onAssign: (suspend (OrganizerModelDetails) -> Unit)? = null,
+    assignmentBusy: Boolean = false,
+    onAssign: (suspend (OrganizerModelDetails, String?) -> Unit)? = null,
 ) {
     var selectedId by rememberSaveable { mutableStateOf<Long?>(null) }
     var confirming by rememberSaveable { mutableStateOf(false) }
@@ -90,6 +92,7 @@ internal fun OrganizerCatalogFlow(
             confirming = confirming,
             onSelect = { confirming = true },
             onBack = ::backToCatalog,
+            assignmentBusy = assignmentBusy,
             onAssign = onAssign,
         )
     }
@@ -195,7 +198,8 @@ private fun ModelStep(
     confirming: Boolean,
     onSelect: () -> Unit,
     onBack: () -> Unit,
-    onAssign: (suspend (OrganizerModelDetails) -> Unit)?,
+    assignmentBusy: Boolean,
+    onAssign: (suspend (OrganizerModelDetails, String?) -> Unit)?,
 ) {
     var retry by remember { mutableIntStateOf(0) }
     var state by remember(modelId) { mutableStateOf<LoadState<OrganizerModelDetails>>(LoadState.Loading) }
@@ -215,7 +219,7 @@ private fun ModelStep(
             onRetry = { retry++ },
         )
         is LoadState.Ready -> if (confirming && current.value.active) {
-            ConfirmContent(current.value, onAssign)
+            ConfirmContent(current.value, assignmentBusy, onAssign)
         } else {
             DetailsContent(current.value, onSelect)
         }
@@ -252,8 +256,15 @@ private fun DetailsContent(model: OrganizerModelDetails, onSelect: () -> Unit) {
 }
 
 @Composable
-private fun ConfirmContent(model: OrganizerModelDetails, onAssign: (suspend (OrganizerModelDetails) -> Unit)?) {
-    var failed by remember { mutableStateOf(false) }
+private fun ConfirmContent(
+    model: OrganizerModelDetails,
+    assignmentBusy: Boolean,
+    onAssign: (suspend (OrganizerModelDetails, String?) -> Unit)?,
+) {
+    var name by rememberSaveable(model.id) { mutableStateOf("") }
+    var failure by remember { mutableStateOf<ApiError?>(null) }
+    val normalizedName = name.trim()
+    val nameTooLong = normalizedName.length > AssignmentNameLimit
     Column(
         modifier = Modifier.fillMaxWidth().testTag("organizer-confirm"),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -280,15 +291,27 @@ private fun ConfirmContent(model: OrganizerModelDetails, onAssign: (suspend (Org
                 style = MaterialTheme.typography.bodyLarge,
             )
         } else {
-            if (failed) AppErrorState(message = stringResource(Res.string.organizer_assign_failed))
+            AppTextField(
+                value = name,
+                onValueChange = {
+                    name = it
+                    failure = null
+                },
+                label = stringResource(Res.string.assignment_name_optional),
+                errorMessage = if (nameTooLong) stringResource(Res.string.assignment_name_too_long) else null,
+                enabled = !assignmentBusy,
+                modifier = Modifier.testTag("organizer-assignment-name"),
+            )
+            failure?.let { AssignmentMutationError(it, Res.string.organizer_assign_failed) }
             AppSubmitButton(
                 text = stringResource(Res.string.organizer_assign),
+                enabled = !assignmentBusy && !nameTooLong,
                 onSubmit = {
-                    failed = false
+                    failure = null
                     try {
-                        onAssign(model)
-                    } catch (_: ApiException) {
-                        failed = true
+                        onAssign(model, normalizedName.ifEmpty { null })
+                    } catch (error: ApiException) {
+                        failure = error.error
                     }
                 },
                 modifier = Modifier.fillMaxWidth().testTag("organizer-assign"),
@@ -387,7 +410,7 @@ private fun Modifier.revealOnEnter(): Modifier {
 }
 
 @Composable
-private fun LayoutSummary(daysCovered: Int?, compartmentsPerDay: Int?) {
+internal fun LayoutSummary(daysCovered: Int?, compartmentsPerDay: Int?) {
     if (daysCovered != null && compartmentsPerDay != null) {
         Text(stringResource(Res.string.organizer_layout_summary, daysCovered, compartmentsPerDay))
     }

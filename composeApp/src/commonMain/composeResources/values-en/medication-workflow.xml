@@ -1,0 +1,31 @@
+<resources>
+    <string name="full_unavailable">This data is no longer available. Return to the list and select the record again.</string>
+    <string name="full_load_failed">Could not load the data. Please try again.</string>
+    <string name="full_no_end">no end date</string>
+    <string name="full_edit">Edit medication details</string>
+    <string name="medication_cancel_edit">Cancel editing</string>
+    <string name="medication_details_title">Medication details</string>
+    <string name="medication_details_action">Details and schedule</string>
+    <string name="medication_dates_summary">Date range: %1$s – %2$s</string>
+    <string name="medication_strength_summary">Strength: %1$s %2$s</string>
+    <string name="medication_active">Active</string>
+    <string name="medication_suspended">Suspended</string>
+    <string name="medication_inactive">Inactive</string>
+    <string name="medication_suspend">Suspend in plan</string>
+    <string name="medication_resume">Resume in plan</string>
+    <string name="medication_deactivate">Deactivate record</string>
+    <string name="medication_deactivate_explanation">Future pending doses will be removed from the plan. Existing intake records will be preserved.</string>
+    <string name="schedule_organizer">Organizer: %1$s</string>
+    <string name="schedule_no_organizer_title">Assign an organizer first</string>
+    <string name="schedule_no_organizer_message">Choose a model and assign it to your account in the Organizer tab, then return to this schedule.</string>
+    <string name="schedule_not_set">No schedule yet. Choose “Medication schedule” to add days and times.</string>
+    <string name="schedule_organizer_unavailable">The assigned organizer is unavailable. Choose an active organizer in the schedule.</string>
+    <string name="schedule_preview_title">Plan preview for this medication</string>
+    <string name="schedule_preview_range">First week of the schedule: %1$s – %2$s</string>
+    <string name="schedule_preview_empty">No doses in this range. Check the days, times and medication dates.</string>
+    <string name="schedule_no_compartment">No assigned compartment — the dose remains in the plan.</string>
+    <string name="schedule_dose_pending">Pending</string>
+    <string name="schedule_dose_taken">Reported taken</string>
+    <string name="schedule_dose_skipped">Reported skipped</string>
+    <string name="schedule_dose_missed">Missed according to the plan</string>
+</resources>

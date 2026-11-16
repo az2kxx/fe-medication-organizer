@@ -21,6 +21,12 @@ class DemoRepository internal constructor(private val api: ApiClient) {
 
     suspend fun medications(): List<Medication> = api.get("/api/medications", requiresSession = true)
 
+    suspend fun medication(medicationId: Long): MedicationDetails =
+        api.get("/api/medications/$medicationId", requiresSession = true)
+
+    suspend fun currentSchedule(medicationId: Long): MedicationSchedule =
+        api.get("/api/medications/$medicationId/schedule", requiresSession = true)
+
     suspend fun createMedication(request: CreateMedication): Medication =
         api.post("/api/medications", request, requiresSession = true)
 
@@ -107,6 +113,22 @@ data class UpdateMedicationStatus(val status: MedicationStatus)
 @Serializable
 data class Medication(val id: Long, val name: String, val status: MedicationStatus)
 
+/** Provisional full response used by MOCK medication details and editing. */
+@Serializable
+data class MedicationDetails(
+    val id: Long,
+    val name: String,
+    val status: MedicationStatus,
+    val doseAmount: JsonPrimitive,
+    val doseUnit: String,
+    val startDate: String,
+    val endDate: String? = null,
+    val strengthValue: JsonPrimitive? = null,
+    val strengthUnit: String? = null,
+    val form: MedicationForm? = null,
+    val userOrganizerId: Long? = null,
+)
+
 @Serializable
 enum class MedicationForm { TABLET, CAPSULE, LIQUID, OTHER }
 
@@ -119,6 +141,7 @@ data class ReplaceSchedule(
     val days: Set<Int>,
     val times: List<ScheduleTime>,
     val validUntil: String? = null,
+    val userOrganizerId: Long? = null,
 )
 
 @Serializable
@@ -135,6 +158,7 @@ data class MedicationSchedule(
     val days: Set<Int>,
     val times: List<ScheduleTime>,
     val validUntil: String? = null,
+    val userOrganizerId: Long? = null,
 )
 
 @Serializable

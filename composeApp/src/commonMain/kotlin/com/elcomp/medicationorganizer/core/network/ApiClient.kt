@@ -69,6 +69,9 @@ internal class ApiClient(
         requiresSession: Boolean = false,
     ): Response = request(HttpMethod.Patch, path, body, requiresSession)
 
+    suspend fun delete(path: String, requiresSession: Boolean = false): Unit =
+        request<Unit, Unit>(HttpMethod.Delete, path, null, requiresSession)
+
     private suspend inline fun <reified Request, reified Response> request(
         verb: HttpMethod,
         path: String,

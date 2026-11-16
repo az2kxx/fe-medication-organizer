@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="assignment_manage">Zarządzaj kasetkami</string>
+    <string name="assignment_list_title">Moje kasetki</string>
+    <string name="assignment_details_title">Edytuj przypisanie</string>
+    <string name="assignment_back_list">Wróć do listy kasetek</string>
+    <string name="assignment_add">Dodaj kasetkę</string>
+    <string name="assignment_name">Nazwa kasetki</string>
+    <string name="assignment_name_optional">Nazwa kasetki (opcjonalnie)</string>
+    <string name="assignment_name_too_long">Nazwa kasetki może mieć najwyżej 32 znaki.</string>
+    <string name="assignment_unnamed">Kasetka bez nazwy</string>
+    <string name="assignment_model">Model %1$s</string>
+    <string name="assignment_selected_for_plan">Plan dla kasetki %1$s</string>
+    <string name="assignment_in_use">Używana w planie</string>
+    <string name="assignment_active">Aktywna</string>
+    <string name="assignment_inactive">Nieaktywna</string>
+    <string name="assignment_default">Domyślna</string>
+    <string name="assignment_use">Użyj tej kasetki</string>
+    <string name="assignment_edit">Edytuj przypisanie</string>
+    <string name="assignment_make_default">Ustaw jako domyślną</string>
+    <string name="assignment_activate">Aktywuj kasetkę</string>
+    <string name="assignment_deactivate">Dezaktywuj kasetkę</string>
+    <string name="assignment_save_name">Zapisz nazwę</string>
+    <string name="assignment_remove">Usuń przypisanie</string>
+    <string name="assignment_remove_message">Usunąć przypisanie kasetki „%1$s”? Zapisane potwierdzenia przyjęcia dawek zostaną w historii.</string>
+    <string name="assignment_cancel">Anuluj</string>
+    <string name="assignment_conflict">Nie można zapisać tej zmiany w obecnym stanie. Sprawdź dostępność kasetki i spróbuj ponownie.</string>
+    <string name="assignment_load_failed">Nie udało się wczytać przypisanych kasetek.</string>
+    <string name="assignment_save_failed">Nie udało się zapisać zmiany przypisania.</string>
+    <string name="assignment_remove_failed">Nie udało się usunąć przypisania.</string>
+    <string name="assignment_list_empty_title">Brak przypisanych kasetek</string>
+    <string name="assignment_list_empty_message">Dodaj kasetkę z katalogu modeli.</string>
+    <string name="assignment_no_selection_title">Brak aktywnej kasetki</string>
+    <string name="assignment_no_selection_message">Dodaj kasetkę lub aktywuj jedną ze swoich kasetek.</string>
+    <string name="assignment_missing_title">Nie znaleziono przypisania</string>
+    <string name="assignment_missing_message">Wróć do listy kasetek i wybierz aktualne przypisanie.</string>
+    <string name="assignment_preparation_for">Przygotowanie kasetki „%1$s”</string>
+    <string name="assignment_preparation_load_failed">Nie udało się wczytać przygotowania tej kasetki.</string>
+    <string name="assignment_preparation_in_progress">Przygotowanie w toku</string>
+    <string name="assignment_preparation_ready">Kasetka gotowa</string>
+</resources>

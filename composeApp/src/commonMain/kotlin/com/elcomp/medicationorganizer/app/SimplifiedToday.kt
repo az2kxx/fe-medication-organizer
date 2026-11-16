@@ -35,12 +35,12 @@ private sealed interface DoseState {
 }
 
 @Composable
-internal fun SimplifiedToday(demo: DemoRepository, onOrganizer: () -> Unit) {
+internal fun SimplifiedToday(demo: DemoRepository, organizerId: Long, onOrganizer: () -> Unit) {
     var retry by remember { mutableIntStateOf(0) }
-    val doseState by produceState<DoseState>(DoseState.Loading, demo, retry) {
+    val doseState by produceState<DoseState>(DoseState.Loading, demo, organizerId, retry) {
         value = DoseState.Loading
         value = try {
-            DoseState.Ready(demo.dailyPlan().firstOrNull { it.status == DoseStatus.PENDING })
+            DoseState.Ready(demo.dailyPlan(organizerId = organizerId).firstOrNull { it.status == DoseStatus.PENDING })
         } catch (_: ApiException) {
             DoseState.Failed
         }

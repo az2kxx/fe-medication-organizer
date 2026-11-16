@@ -1,0 +1,31 @@
+<resources>
+    <string name="full_unavailable">Te dane są już niedostępne. Wróć do listy i wybierz wpis ponownie.</string>
+    <string name="full_load_failed">Nie udało się wczytać danych. Spróbuj ponownie.</string>
+    <string name="full_no_end">bez daty końca</string>
+    <string name="full_edit">Edytuj dane leku</string>
+    <string name="medication_cancel_edit">Anuluj edycję</string>
+    <string name="medication_details_title">Szczegóły leku</string>
+    <string name="medication_details_action">Szczegóły i harmonogram</string>
+    <string name="medication_dates_summary">Okres: %1$s – %2$s</string>
+    <string name="medication_strength_summary">Moc: %1$s %2$s</string>
+    <string name="medication_active">Aktywny</string>
+    <string name="medication_suspended">Zawieszony</string>
+    <string name="medication_inactive">Nieaktywny</string>
+    <string name="medication_suspend">Zawieś w planie</string>
+    <string name="medication_resume">Wznów w planie</string>
+    <string name="medication_deactivate">Dezaktywuj wpis</string>
+    <string name="medication_deactivate_explanation">Przyszłe oczekujące dawki znikną z planu. Dotychczasowe potwierdzenia zostaną zachowane.</string>
+    <string name="schedule_organizer">Kasetka: %1$s</string>
+    <string name="schedule_no_organizer_title">Najpierw przypisz kasetkę</string>
+    <string name="schedule_no_organizer_message">W zakładce Kasetka wybierz model i przypisz go do konta. Potem wróć do harmonogramu.</string>
+    <string name="schedule_not_set">Nie ma jeszcze harmonogramu. Wybierz „Harmonogram leku”, aby dodać dni i godziny.</string>
+    <string name="schedule_organizer_unavailable">Przypisana kasetka jest niedostępna. W harmonogramie wybierz aktywną kasetkę.</string>
+    <string name="schedule_preview_title">Podgląd planu tego leku</string>
+    <string name="schedule_preview_range">Pierwszy tydzień harmonogramu: %1$s – %2$s</string>
+    <string name="schedule_preview_empty">Brak dawek w tym okresie. Sprawdź dni, godziny i daty stosowania leku.</string>
+    <string name="schedule_no_compartment">Brak przypisanej przegródki — dawka pozostaje w planie.</string>
+    <string name="schedule_dose_pending">Oczekuje</string>
+    <string name="schedule_dose_taken">Zgłoszono przyjęcie</string>
+    <string name="schedule_dose_skipped">Zgłoszono pominięcie</string>
+    <string name="schedule_dose_missed">Brak przyjęcia według planu</string>
+</resources>

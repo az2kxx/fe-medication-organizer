@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="medication_add_title">Dodaj lek</string>
+    <string name="medications_list_failed">Nie udało się wczytać listy leków.</string>
+    <string name="medication_name">Nazwa leku</string>
+    <string name="medication_dose_title">Dawka</string>
+    <string name="medication_dose_amount">Ilość dawki</string>
+    <string name="medication_dose_unit">Jednostka dawki</string>
+    <string name="medication_dates_title">Daty stosowania</string>
+    <string name="medication_date_hint">Wpisz daty w formacie RRRR-MM-DD.</string>
+    <string name="medication_start_date">Data początku</string>
+    <string name="medication_end_date">Data końca (opcjonalnie)</string>
+    <string name="medication_optional_title">Dane opcjonalne</string>
+    <string name="medication_strength_value">Moc leku</string>
+    <string name="medication_strength_unit">Jednostka mocy</string>
+    <string name="medication_form_label">Postać leku</string>
+    <string name="medication_form_none">Bez wyboru</string>
+    <string name="medication_form_tablet">Tabletka</string>
+    <string name="medication_form_capsule">Kapsułka</string>
+    <string name="medication_form_liquid">Płyn</string>
+    <string name="medication_form_other">Inna</string>
+    <string name="medication_save">Zapisz lek</string>
+    <string name="medication_back">Wróć do listy leków</string>
+    <string name="medication_field_required">Uzupełnij to pole.</string>
+    <string name="medication_positive_decimal">Wpisz liczbę większą od zera.</string>
+    <string name="medication_invalid_date">Wpisz istniejącą datę w formacie RRRR-MM-DD.</string>
+    <string name="medication_end_before_start">Data końca nie może być wcześniejsza niż data początku.</string>
+    <string name="medication_correct_fields">Sprawdź pola oznaczone błędem.</string>
+    <string name="medication_save_rejected">Nie udało się zapisać leku. Sprawdź dane i spróbuj ponownie.</string>
+    <string name="medication_save_failed">Nie udało się zapisać leku. Spróbuj ponownie.</string>
+</resources>
