@@ -42,4 +42,5 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
     testImplementation(libs.compose.test.junit4)
+    testImplementation(libs.kotlinx.serialization.json)
 }

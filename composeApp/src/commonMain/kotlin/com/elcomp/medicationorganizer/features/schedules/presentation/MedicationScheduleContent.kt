@@ -11,6 +11,7 @@ import com.elcomp.medicationorganizer.core.demo.*
 import com.elcomp.medicationorganizer.core.network.ApiError
 import com.elcomp.medicationorganizer.core.network.ApiException
 import com.elcomp.medicationorganizer.core.ui.*
+import com.elcomp.medicationorganizer.core.time.currentLocalDate
 import com.elcomp.medicationorganizer.core.time.shiftDate
 import com.elcomp.medicationorganizer.features.organizers.data.UserOrganizer
 import com.elcomp.medicationorganizer.features.organizers.data.dto.OrganizerModelDetails
@@ -86,6 +87,7 @@ internal fun MedicationScheduleContent(
 
 private data class Preview(
     val schedule: MedicationSchedule?,
+    val from: String,
     val doses: List<DoseOccurrence> = emptyList(),
     val model: OrganizerModelDetails? = null,
     val unavailableOrganizer: Boolean = false,
@@ -99,16 +101,18 @@ internal fun MedicationSchedulePreview(
     organizerNames: Map<Long, String>,
     revision: Int,
 ) {
+    val today = currentLocalDate()
     Column(Modifier.fillMaxWidth().testTag("schedule-preview"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(Res.string.schedule_preview_title), style = MaterialTheme.typography.titleLarge)
-        LoadContent(demo, medicationId, revision, organizers, load = {
+        LoadContent(demo, medicationId, revision, organizers, today, load = {
             val schedule = demo.optionalSchedule(medicationId)
+            val from = maxOf(schedule?.validFrom ?: today, today)
             val assignment = organizers.firstOrNull { it.id == schedule?.userOrganizerId }
             when {
-                schedule == null -> Preview(null)
-                assignment == null || !assignment.active -> Preview(schedule, unavailableOrganizer = true)
-                else -> Preview(schedule,
-                    demo.weeklyPlan(schedule.validFrom, assignment.id).filter { it.medicationId == medicationId },
+                schedule == null -> Preview(null, from)
+                assignment == null || !assignment.active -> Preview(schedule, from, unavailableOrganizer = true)
+                else -> Preview(schedule, from,
+                    demo.weeklyPlan(from, assignment.id).filter { it.medicationId == medicationId },
                     demo.organizerModel(assignment.organizerModelId))
             }
         }) { preview ->
@@ -118,7 +122,7 @@ internal fun MedicationSchedulePreview(
                 preview.unavailableOrganizer -> Text(stringResource(Res.string.schedule_organizer_unavailable))
                 else -> {
                     Text(stringResource(Res.string.schedule_organizer, organizerNames[schedule.userOrganizerId] ?: stringResource(Res.string.navigation_organizer)))
-                    Text(stringResource(Res.string.schedule_preview_range, schedule.validFrom, shiftDate(schedule.validFrom, 6)))
+                    Text(stringResource(Res.string.schedule_preview_range, preview.from, shiftDate(preview.from, 6)))
                     if (preview.doses.isEmpty()) Text(stringResource(Res.string.schedule_preview_empty))
                     preview.doses.forEach { dose ->
                         OutlinedCard(Modifier.fillMaxWidth().testTag("schedule-preview-dose-${dose.id}")) {

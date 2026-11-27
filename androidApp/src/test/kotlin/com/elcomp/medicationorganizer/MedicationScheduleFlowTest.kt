@@ -15,6 +15,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
+import com.elcomp.medicationorganizer.core.time.currentLocalDate
+import java.time.LocalDate
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -32,14 +34,16 @@ class MedicationScheduleFlowTest {
     @Test
     fun aNewFractionalMedicationHasAnEditableScheduleAndAnUpdatedPlanPreview() {
         val medication = "Lek ułamkowy do harmonogramu"
-        createMedication(medication)
+        val date = currentLocalDate()
+        val weekday = LocalDate.parse(date).dayOfWeek.value
+        createMedication(medication, startDate = date)
         openMedication(medication)
         composeRule.onNodeWithTag("medication-details-name").assert(hasText(medication))
         openSchedule()
 
-        replace("schedule-valid-from", "2026-11-02")
-        replace("schedule-valid-until", "2026-11-02")
-        day(1)
+        replace("schedule-valid-from", date)
+        replace("schedule-valid-until", date)
+        day(weekday)
         replace("schedule-time-0", "8:00")
         selectPeriod(0, "MORNING")
         click("schedule-add-time")
@@ -56,9 +60,9 @@ class MedicationScheduleFlowTest {
         composeRule.onNodeWithTag("schedule-preview")
             .assert(hasAnyDescendant(hasText("0.25 ml", substring = true)))
         openSchedule()
-        assertValue("schedule-valid-from", "2026-11-02")
-        assertValue("schedule-valid-until", "2026-11-02")
-        composeRule.onNodeWithTag("schedule-day-1").performScrollTo().assertIsSelected()
+        assertValue("schedule-valid-from", date)
+        assertValue("schedule-valid-until", date)
+        composeRule.onNodeWithTag("schedule-day-$weekday").performScrollTo().assertIsSelected()
         assertValue("schedule-time-0", "08:00")
         assertValue("schedule-time-1", "20:15")
         composeRule.onNodeWithTag("schedule-time-of-day-0").performScrollTo().assert(hasText("Rano", substring = true))
@@ -139,7 +143,7 @@ class MedicationScheduleFlowTest {
             .performScrollTo().assertIsSelected()
     }
 
-    private fun createMedication(name: String) {
+    private fun createMedication(name: String, startDate: String = "2026-11-02") {
         waitFor("welcome-start")
         click("welcome-start")
         waitFor("screen-today")
@@ -150,7 +154,7 @@ class MedicationScheduleFlowTest {
         replace("medication-name", name)
         replace("medication-dose-amount", "0,25")
         replace("medication-dose-unit", "ml")
-        replace("medication-start-date", "2026-11-02")
+        replace("medication-start-date", startDate)
         click("medication-save")
         waitFor("medications-list")
         waitFor(tagStartingWith("medication-item-") and hasText(name))
