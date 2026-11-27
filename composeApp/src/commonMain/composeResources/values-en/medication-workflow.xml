@@ -21,7 +21,7 @@
     <string name="schedule_not_set">No schedule yet. Choose “Medication schedule” to add days and times.</string>
     <string name="schedule_organizer_unavailable">The assigned organizer is unavailable. Choose an active organizer in the schedule.</string>
     <string name="schedule_preview_title">Plan preview for this medication</string>
-    <string name="schedule_preview_range">First week of the schedule: %1$s – %2$s</string>
+    <string name="schedule_preview_range">Plan for 7 days: %1$s – %2$s</string>
     <string name="schedule_preview_empty">No doses in this range. Check the days, times and medication dates.</string>
     <string name="schedule_no_compartment">No assigned compartment — the dose remains in the plan.</string>
     <string name="schedule_dose_pending">Pending</string>

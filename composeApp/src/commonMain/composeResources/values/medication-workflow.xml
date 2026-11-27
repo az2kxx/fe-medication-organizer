@@ -21,7 +21,7 @@
     <string name="schedule_not_set">Nie ma jeszcze harmonogramu. Wybierz „Harmonogram leku”, aby dodać dni i godziny.</string>
     <string name="schedule_organizer_unavailable">Przypisana kasetka jest niedostępna. W harmonogramie wybierz aktywną kasetkę.</string>
     <string name="schedule_preview_title">Podgląd planu tego leku</string>
-    <string name="schedule_preview_range">Pierwszy tydzień harmonogramu: %1$s – %2$s</string>
+    <string name="schedule_preview_range">Plan na 7 dni: %1$s – %2$s</string>
     <string name="schedule_preview_empty">Brak dawek w tym okresie. Sprawdź dni, godziny i daty stosowania leku.</string>
     <string name="schedule_no_compartment">Brak przypisanej przegródki — dawka pozostaje w planie.</string>
     <string name="schedule_dose_pending">Oczekuje</string>
